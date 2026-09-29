@@ -1,0 +1,20 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8a9a7bf0b276e7147b28296c79e1e142, type: 3}
+  m_Name: Augment 17
+  m_EditorClassIdentifier: Assembly-CSharp::AugmentData
+  augmentId: knight_cooldown_on_threat_kill
+  displayName: "\uC5F0\uC1C4 \uC704\uD611"
+  description: "\uC704\uD611 \uB300\uC0C1 \uCC98\uCE58 \uC2DC \uC704\uD611 \uCFE8\uD0C0\uC784 1\uD134 \uAC10\uC18C."
+  icon: {fileID: 41942573, guid: 1e61fdbcb6e247a489251df9336374f9, type: 3}
+  rarity: 1
+  relatedPieces: 2

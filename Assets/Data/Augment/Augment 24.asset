@@ -1,0 +1,20 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8a9a7bf0b276e7147b28296c79e1e142, type: 3}
+  m_Name: Augment 24
+  m_EditorClassIdentifier: Assembly-CSharp::AugmentData
+  augmentId: queen_conscription
+  displayName: "\uD038 \uC9D5\uC9D1"
+  description: "\uD3F0 5\uAC1C \uD76C\uC0DD \u2192 1\uB7AD\uD06C\uC5D0 \uD038 \uC0DD\uC131."
+  icon: {fileID: -388262496, guid: 1e61fdbcb6e247a489251df9336374f9, type: 3}
+  rarity: 1
+  relatedPieces: 16

@@ -1,0 +1,259 @@
+using System;
+using UnityEngine;
+using UnityEngine.UI;
+
+// 게임 전체의 진행, 턴 제한 시간, 턴 전환 및 UI 표시를 총괄 관리하는 싱글톤 클래스.
+public class GameManager : MonoBehaviour
+{
+    public static GameManager Instance { get; private set; }
+
+    #region 인스펙터 설정값
+    [Header("Turn Settings")]
+    [SerializeField] private bool useTurnSystem = true;    // 턴 시스템 사용 여부
+    [SerializeField] private float turnTime = 30f;         // 턴 제한 시간 (초)
+
+    [Header("Turn UI")]
+    [SerializeField] private Image fill;                  // 시간 표시 Fill Image
+    [SerializeField] private GameObject turnTimeBar;       // 시간바 부모 오브젝트
+    [SerializeField] private Text turnCountText;          // 턴 진행 수 표시 텍스트
+    #endregion
+
+    #region 내부 상태 필드
+    private int currentTurn = 0;            // 0 = White / 1 = Black
+    private int turnCount = 1;              // 체스 게임 전체 진행 턴 수
+    private float currentTurnTime;          // 현재 턴의 남은 제한 시간
+    private bool hasMovedThisTurn = false;  // 현재 턴 내 기물 이동 완료 여부
+    private bool isPaused = false;          // 증강 선택 UI 오픈 등의 사유로 타이머 일시정지 여부
+
+    // 앙파상 타깃 좌표 (폰 2칸 전진 시 활성화)
+    private Vector2Int? enPassantTarget = null;
+    #endregion
+
+    #region 외부 공개 프로퍼티
+    public int CurrentTurn => currentTurn;
+    public int TurnCount => turnCount;
+    public int armisticeTurns = 0;
+    public float CurrentTurnTime => currentTurnTime;
+    public bool HasMovedThisTurn => hasMovedThisTurn;
+    public bool UseTurnSystem => useTurnSystem;
+    public bool IsPaused => isPaused;
+    public Vector2Int? EnPassantTarget => enPassantTarget;
+    #endregion
+
+    #region 이벤트
+    public event Action OnTurnTimeout;             // 시간 초과 시 선택 기물/하이라이트 정리를 위한 이벤트
+    public event Action<int> OnTurnStarted;        // 턴 시작 시 실행되는 이벤트 (매개변수: currentTurn)
+    #endregion
+
+    #region 유니티 생명주기
+    // 싱글턴 인스턴스 등록
+    private void Awake()
+    {
+        // 싱글턴 패턴
+        if (Instance != null && Instance != this)
+        {
+            Destroy(gameObject);
+            return;
+        }
+        Instance = this;
+    }
+
+    // 턴 시스템을 사용하면 시간바를 켜고 백팀부터 첫 턴을 시작
+    private void Start()
+    {
+        if (!useTurnSystem) return;
+
+        if (turnTimeBar != null)
+            turnTimeBar.SetActive(useTurnSystem);
+
+        turnCount = 1;
+        StartTurn(0); // 백팀(0)부터 게임 시작
+    }
+
+    // 매 프레임 턴 타이머를 갱신 (턴 시스템 미사용/일시정지/게임종료 시 스킵)
+    private void Update()
+    {
+        if (!useTurnSystem || isPaused) return;
+
+        // 게임 종료 상태 시 타이머 업데이트 중단
+        if (GameEndManager.Instance != null && GameEndManager.Instance.IsGameOver)
+            return;
+
+        UpdateTurnTimer();
+    }
+    #endregion
+
+    #region 앙파상 처리
+    // 폰 2칸 전진 시 앙파상 타깃 좌표 설정
+    public void SetEnPassantTarget(Vector2Int target) => enPassantTarget = target;
+    // 앙파상 타깃 좌표 초기화
+    public void ClearEnPassantTarget() => enPassantTarget = null;
+    #endregion
+
+    #region 타이머 일시정지 제어
+    // 증강 선택 등 UI가 열릴 때 턴 타이머를 멈춘다.
+    public void PauseTimer() => isPaused = true;
+    // 멈췄던 턴 타이머를 다시 재개한다.
+    public void ResumeTimer() => isPaused = false;
+
+    // 매 프레임 남은 시간을 줄이고 UI 업데이트 및 타임아웃 판정 수행
+    private void UpdateTurnTimer()
+    {
+        currentTurnTime -= Time.deltaTime;
+
+        if (currentTurnTime <= 0f)
+        {
+            currentTurnTime = 0f;
+            OnTurnTimeout?.Invoke();
+            RequestEndTurn();
+            return;
+        }
+
+        UpdateTurnUI();
+    }
+    #endregion
+
+    #region 턴 상태 관리
+    // 신규 턴을 시작하고 턴 상태 및 UI를 초기화
+    private void StartTurn(int team)
+    {
+        currentTurn = team;
+        currentTurnTime = turnTime;
+        hasMovedThisTurn = false;
+
+        ResetAllPiecesTurnState();
+
+        UpdateTurnUI();
+        UpdateTurnCountUI();
+
+        OnTurnStarted?.Invoke(currentTurn);
+    }
+
+    // 현재 턴을 종료하고 다음 팀으로 턴을 전환
+    public void EndTurn()
+    {
+        if (!useTurnSystem) return;
+
+        SoundManager.Instance?.PlayTurnEnd();
+
+        if (armisticeTurns > 0)
+        {
+            Debug.Log($"[GameManager] 휴전 협정 진행 중... (남은 턴: {armisticeTurns})");
+            armisticeTurns--;
+        }
+
+        // 10턴 단위 주기마다 증강 카드 선택 체크포인트 시작. 두 팀(White/Black) 모두 각자
+        // 독립적으로 증강 카드를 선택해야 하며, CardSelectionManager가 내부적으로 순서를 관리해
+        // 두 팀 모두 선택을 마쳤을 때에만 타이머가 재개되도록 처리한다.
+        if (turnCount > 1 && turnCount % 10 == 0)
+        {
+            CardSelectionManager.Instance?.TriggerAugmentCheckpoint();
+        }
+
+        turnCount++;
+        currentTurn = 1 - currentTurn;
+        StartTurn(currentTurn);
+    }
+
+    // 네트워크 대전 중 로컬에서만 발생하는 턴 종료 트리거(시간 초과, 수동 "턴 종료" 버튼)를
+    // 상대에게도 동일하게 전파한다. 이동으로 인한 턴 종료(PieceMoved)는 이미 보드 클릭 자체가
+    // RPC로 중계되어 양쪽에서 동일하게 실행되므로 여기를 거치지 않아도 자연히 동기화된다.
+    // 네트워크 대전이 아니면(로컬 테스트 등) 기존처럼 즉시 종료한다.
+    //
+    // 요청 시점의 turnCount를 함께 전달해, "지금 끝내려는 턴이 몇 턴인지"를 RPC에 담는다.
+    // (아래 EndTurnFromNetwork 주석 참고 — 이게 중복 종료를 막는 핵심 키.)
+    public void RequestEndTurn()
+    {
+        if (GameStartController.LocalTeam >= 0 && ChessNetworkSync.Instance != null)
+        {
+            ChessNetworkSync.Instance.RPC_RelayEndTurn(turnCount);
+        }
+        else
+        {
+            EndTurn();
+        }
+    }
+
+    // RPC로 전달된 턴 종료 요청을 처리.
+    // 양쪽 클라이언트의 타이머가 거의 동시에 시간 초과를 감지하면 각자 RequestEndTurn을 호출하므로,
+    // 한 클라이언트 입장에서 같은 턴(N)에 대한 종료 요청이 "내 요청"과 "상대 요청" 두 번 도착할 수 있다.
+    // 이때 requestedTurnCount(요청이 만들어진 시점의 turnCount = N)를 현재 turnCount와 비교해서,
+    // 첫 번째 요청 처리로 이미 턴이 N+1로 넘어간 뒤 도착한 두 번째 요청(여전히 N을 가리킴)은
+    // "이미 처리된 낡은 요청"으로 판단해 무시한다. (turnCount 값 자체가 매번 바뀌므로
+    // 처리 이후의 turnCount가 아니라 "요청이 생성된 시점의 turnCount"를 비교 기준으로 삼아야 한다.)
+    public void EndTurnFromNetwork(int requestedTurnCount)
+    {
+        if (requestedTurnCount != turnCount) return;
+        EndTurn();
+    }
+
+    // 지정 기물이 현재 턴에 이동 가능한 상태인지 검사
+    public bool CanMovePiece(ChessPieces piece)
+    {
+        if (!useTurnSystem) return true;
+        return piece != null && piece.team == currentTurn && !hasMovedThisTurn;
+    }
+
+    // 보드 위 모든 기물의 "이번 턴 이동 횟수"를 초기화
+    private void ResetAllPiecesTurnState()
+    {
+        if (ChessBoard.Instance == null || ChessBoard.Instance.Pieces == null) return;
+
+        var pieces = ChessBoard.Instance.Pieces;
+        for (int x = 0; x < ChessBoard.TileCountX; x++)
+        {
+            for (int y = 0; y < ChessBoard.TileCountY; y++)
+            {
+                if (pieces[x, y] != null)
+                {
+                    pieces[x, y].ResetTurnState();
+                }
+            }
+        }
+    }
+
+    // 기물 이동 처리
+    public void PieceMoved()
+    {
+        if (!useTurnSystem) return;
+        hasMovedThisTurn = true;
+        EndTurn();
+    }
+
+    // 새 매치를 시작할 때 턴 진행 상태를 초기 상태로 되돌린다.
+    // (이전 매치의 턴 수/휴전 카운트/앙파상 타깃이 새 매치에 그대로 남아있던 문제 수정)
+    public void ResetForNewMatch()
+    {
+        armisticeTurns = 0;
+        enPassantTarget = null;
+        isPaused = false;
+        turnCount = 1;
+
+        if (useTurnSystem)
+            StartTurn(0); // 백팀(0)부터 다시 시작 (OnTurnStarted 이벤트로 다른 매니저들의 턴 상태도 함께 초기화됨)
+    }
+    #endregion
+
+    #region UI 표시 갱신
+    // 턴 진행 시간에 따른 Fill Image 게이지 및 색상(녹색 -> 노랑 -> 빨강) 변경
+    private void UpdateTurnUI()
+    {
+        if (fill == null) return;
+
+        float normalizedTime = currentTurnTime / turnTime;
+        fill.fillAmount = normalizedTime;
+
+        // 시간에 따른 Lerp 색상 보정
+        fill.color = normalizedTime > 0.5f
+            ? Color.Lerp(Color.yellow, Color.green, (normalizedTime - 0.5f) * 2f)
+            : Color.Lerp(Color.red, Color.yellow, normalizedTime * 2f);
+    }
+
+    // 턴 수 표기 텍스트 갱신
+    private void UpdateTurnCountUI()
+    {
+        if (turnCountText != null)
+            turnCountText.text = $"Turn {turnCount}";
+    }
+    #endregion
+}

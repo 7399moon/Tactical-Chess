@@ -1,0 +1,20 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8a9a7bf0b276e7147b28296c79e1e142, type: 3}
+  m_Name: Augment 36
+  m_EditorClassIdentifier: Assembly-CSharp::AugmentData
+  augmentId: bishop_warp_attack
+  displayName: "\uCC28\uC6D0 \uC554\uC0B4"
+  description: "\uC6CC\uD504\uB85C \uC801 \uACF5\uACA9 \uAC00\uB2A5 (\uCC98\uCE58 \uC2DC \uC6CC\uD504 \uCFE8\uD0C0\uC784 +2\uD134)."
+  icon: {fileID: -595003008, guid: d080d569605ae7c4fad024cfdd9afb92, type: 3}
+  rarity: 3
+  relatedPieces: 4

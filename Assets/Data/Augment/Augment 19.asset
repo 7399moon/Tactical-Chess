@@ -1,0 +1,20 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8a9a7bf0b276e7147b28296c79e1e142, type: 3}
+  m_Name: Augment 19
+  m_EditorClassIdentifier: Assembly-CSharp::AugmentData
+  augmentId: bishop_cooldown_on_kill
+  displayName: "\uC6CC\uD504 \uAC00\uC18D"
+  description: "\uBE44\uC20D\uC774 \uC801 \uCC98\uCE58 \uC2DC \uC6CC\uD504 \uCFE8\uD0C0\uC784 1\uD134 \uAC10\uC18C."
+  icon: {fileID: -1409375928, guid: 1e61fdbcb6e247a489251df9336374f9, type: 3}
+  rarity: 1
+  relatedPieces: 4

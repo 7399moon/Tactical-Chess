@@ -1,0 +1,20 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8a9a7bf0b276e7147b28296c79e1e142, type: 3}
+  m_Name: Augment 29
+  m_EditorClassIdentifier: Assembly-CSharp::AugmentData
+  augmentId: rook_shield_target_up
+  displayName: "\uAD11\uC5ED \uC218\uD638"
+  description: "\uC274\uB4DC \uB300\uC0C1 +1\uBA85."
+  icon: {fileID: -1510963752, guid: bf424b556e2d473498d07be57f7a3cbf, type: 3}
+  rarity: 2
+  relatedPieces: 8

@@ -1,0 +1,20 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8a9a7bf0b276e7147b28296c79e1e142, type: 3}
+  m_Name: Augment 18
+  m_EditorClassIdentifier: Assembly-CSharp::AugmentData
+  augmentId: bishop_warp_swap
+  displayName: "\uC6CC\uD504 \uC2A4\uC651"
+  description: "\uC6CC\uD504 \uBC94\uC704 \uB0B4 \uC544\uAD70\uACFC \uC790\uB9AC \uAD50\uCCB4 \uAC00\uB2A5 (\uC6CC\uD504\uB85C \uD310\uC815)."
+  icon: {fileID: -1741156295, guid: 1e61fdbcb6e247a489251df9336374f9, type: 3}
+  rarity: 1
+  relatedPieces: 4

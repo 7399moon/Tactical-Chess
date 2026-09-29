@@ -1,0 +1,38 @@
+# Unity generated
+/[Ll]ibrary/
+/[Tt]emp/
+/[Oo]bj/
+/[Bb]uild/
+/[Bb]uilds/
+/[Ll]ogs/
+/[Uu]ser[Ss]ettings/
+/[Mm]emoryCaptures/
+/[Rr]ecordings/
+
+# IDE
+.vs/
+.vscode/
+.idea/
+*.csproj
+*.sln
+*.suo
+*.user
+*.pidb
+*.booproj
+
+# Misc
+*.pdb
+*.mdb
+*.apk
+*.aab
+*.unitypackage
+.consulo/
+crashlytics-build.properties
+Screenshots/
+"Claude outputs/"
+_incoming/
+[Ss]ymbols/
+sysinfo.txt
+*.log
+.DS_Store
+Thumbs.db

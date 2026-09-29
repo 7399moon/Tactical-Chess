@@ -1,0 +1,20 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8a9a7bf0b276e7147b28296c79e1e142, type: 3}
+  m_Name: Augment 2
+  m_EditorClassIdentifier: Assembly-CSharp::AugmentData
+  augmentId: king_range_up
+  displayName: "\uC655\uC758 \uBCF4\uD3ED"
+  description: "\uD0B9\uC774 \uD55C \uD134\uC5D0 \uD55C \uBC88 \uB354 \uC774\uB3D9 \uAC00\uB2A5 (\uC774\uB3D9 \uD69F\uC218 +1)."
+  icon: {fileID: -1667092044, guid: c5f34a2a37347984b8ce8eb64c20b899, type: 3}
+  rarity: 0
+  relatedPieces: 32

@@ -1,0 +1,20 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8a9a7bf0b276e7147b28296c79e1e142, type: 3}
+  m_Name: Augment 14
+  m_EditorClassIdentifier: Assembly-CSharp::AugmentData
+  augmentId: pawn_frontal_capture
+  displayName: "\uC815\uBA74 \uB3CC\uACA9"
+  description: "\uD3F0\uC774 \uC815\uBA74 \uAE30\uBB3C\uB3C4 \uC7A1\uC744 \uC218 \uC788\uC74C."
+  icon: {fileID: -1669724389, guid: c5f34a2a37347984b8ce8eb64c20b899, type: 3}
+  rarity: 0
+  relatedPieces: 1
