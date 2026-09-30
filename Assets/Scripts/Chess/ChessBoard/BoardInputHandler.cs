@@ -31,9 +31,10 @@ public class BoardInputHandler : MonoBehaviour
     // 매 프레임 마우스 위치를 Raycast로 검사해 호버/클릭 이벤트를 발행
     private void Update()
     {
-        // 카드 선택 UI가 활성화되어 있거나 게임 종료 시 보드 입력 전체 차단
+        // 카드 선택 UI가 활성화되어 있거나 게임 종료 시, 환경설정 패널이 열려 있을 때 보드 입력 전체 차단
         if ((CardSelectionManager.Instance != null && CardSelectionManager.Instance.IsSelecting) ||
-            (GameEndManager.Instance != null && GameEndManager.Instance.IsGameOver))
+            (GameEndManager.Instance != null && GameEndManager.Instance.IsGameOver) ||
+            SettingsManager.IsPanelOpen)
         {
             ResetHoverStates();
             return;

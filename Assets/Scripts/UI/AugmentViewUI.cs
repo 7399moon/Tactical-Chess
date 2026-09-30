@@ -53,6 +53,13 @@ public class AugmentViewUI : MonoBehaviour
     }
     #endregion
 
+    // 로비 규칙(증강 ON/OFF)을 UI에 반영: OFF면 보유 증강 버튼을 숨기고 열려 있던 패널도 닫는다.
+    public void ApplyMatchSettings()
+    {
+        if (!MatchSettings.AugmentEnabled) Close();
+        if (openButton != null) openButton.gameObject.SetActive(MatchSettings.AugmentEnabled);
+    }
+
     #region 공개 API (버튼에서 호출)
     // "보유 증강 확인" 버튼에서 호출: 패널을 열고, 로컬 플레이어 자신의 팀을 기본으로 보여준다.
     // 로컬 테스트(LocalTeam == -1) 중이면 White(0)를 기본값으로 사용한다.

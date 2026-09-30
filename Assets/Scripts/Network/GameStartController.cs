@@ -1,8 +1,8 @@
 using UnityEngine;
 
-// GameScene의 대기 상태 및 팀 배정(카메라 포함)을 관리하는 컨트롤러.
-// 방 인원이 2명이 되기 전까지는 게임 UI와 체스판/기물을 모두 숨기고 "상대방 입장 대기 중" 화면만 보여주며,
-// BasicSpawner가 접속 인원 변화를 감지할 때마다 StartMatch/ShowWaiting을 호출해 상태를 전환한다.
+// GameScene의 매치 시작 및 팀 배정(카메라 포함)을 관리하는 컨트롤러.
+// 대기 화면은 로비 씬이 담당하므로, 이 컨트롤러는 로비에서 게임 시작이 확정되기 전까지 게임 UI와 체스판/기물을 숨겨 두고
+// 시작이 확정되면(MatchSession.Pending) 팀/카메라를 배정한 뒤 StartMatch를 호출한다.
 public class GameStartController : MonoBehaviour
 {
     // 다른 매니저들과 동일한 싱글턴 패턴. 게임오버 UI의 "게임 재시작" 버튼(RPC 수신측)처럼
@@ -11,8 +11,6 @@ public class GameStartController : MonoBehaviour
 
     #region 인스펙터 설정값
     [SerializeField] private GameObject gameCanvas; // 실제 게임 UI(체스판 UI 등)가 들어있는 Canvas
-    [SerializeField] private GameObject waitingUI;  // "상대방 입장 대기 중" 안내 UI
-    [SerializeField] private UnityEngine.UI.Text roomCodeText; // 대기 화면 상단에 표시할 방 번호 텍스트
 
     [Header("팀별 카메라")]
     [SerializeField] private GameObject whiteCamera; // 백색 기물 방향 카메라 (기존 Main Camera)
@@ -38,7 +36,23 @@ public class GameStartController : MonoBehaviour
     // ChessBoard.Awake()에서 Instance가 설정되므로 Start() 시점에는 항상 준비되어 있다.
     private void Start()
     {
+        // 대기 화면은 로비 씬이 담당한다 - 매치가 시작되기 전까지는 게임 UI와 체스판을 숨겨 둔다.
+        if (gameCanvas != null) gameCanvas.SetActive(false);
         ChessBoard.Instance?.SetBoardVisible(false);
+    }
+
+    // 로비에서 "게임 시작"이 확정되면(MatchSession.Pending) 팀/카메라를 배정하고 매치를 시작한다.
+    // RPC_LobbyStart 수신과 GameScene 로드 완료의 순서가 피어마다 다를 수 있어, 양쪽 순서 모두 대응하도록
+    // Start가 아니라 Update에서 폴링한다(Pending이 소비되면 더는 작동하지 않는다).
+    private void Update()
+    {
+        if (!MatchSession.Pending) return;
+        MatchSession.Pending = false;
+
+        AssignLocalTeam(MatchSession.LocalTeam);
+        AssignTeamCamera(MatchSession.LocalTeam);
+        LobbyController.HideLobbyScene();
+        StartMatch();
     }
     #endregion
 
@@ -57,30 +71,10 @@ public class GameStartController : MonoBehaviour
         SoundManager.Instance?.PlayGameStart();
 
         if (gameCanvas != null) gameCanvas.SetActive(true);
-        if (waitingUI != null) waitingUI.SetActive(false);
         ChessBoard.Instance?.SetBoardVisible(true);
     }
 
-    // 방 인원이 2명 미만일 때 호출: 게임 UI와 체스판/기물을 끄고 대기 화면을 켠다.
-    public void ShowWaiting()
-    {
-        if (gameCanvas != null) gameCanvas.SetActive(false);
-        if (waitingUI != null) waitingUI.SetActive(true);
-        ChessBoard.Instance?.SetBoardVisible(false);
-    }
-
-    // 매치 도중 상대방이 나가 인원이 2명 미만으로 떨어졌을 때 호출(BasicSpawner.OnPlayerLeft 등).
-    // 진행 중이던 매치 상태(기물 위치/스킬 쿨타임/증강/턴/게임오버 결과)를 StartMatch()와 동일하게
-    // 전부 초기화한 뒤 대기 화면으로 되돌린다 - 남은 자리에 새 상대가 들어와도(같은 방 번호로 재입장)
-    // 이전 매치의 잔여 상태가 새 매치로 새지 않도록 한다. 아직 아무도 나간 적 없는 최초 대기
-    // 상태(인원 1명)에서 호출돼도 이미 초기 상태인 매니저들을 다시 초기화할 뿐이라 안전하다.
-    public void ResetAndShowWaiting()
-    {
-        ResetMatchState();
-        ShowWaiting();
-    }
-
-    // StartMatch()/ResetAndShowWaiting()이 공유하는 매치 상태 초기화 로직.
+    // StartMatch()가 사용하는 매치 상태 초기화 로직.
     private void ResetMatchState()
     {
         ChessBoard.Instance?.ResetBoard();
@@ -90,16 +84,15 @@ public class GameStartController : MonoBehaviour
         GameOverUI.Instance?.HideResult();
         ChessInteractionManager.Instance?.ResetInteractionState();
         GameManager.Instance?.ResetForNewMatch();
+
+        // 로비 규칙(스킬/증강 ON/OFF)을 UI에 반영
+        SkillUIManager.Instance?.ApplyMatchSettings();
+        var augView = FindAnyObjectByType<AugmentViewUI>(FindObjectsInactive.Include);
+        if (augView != null) augView.ApplyMatchSettings();
     }
     #endregion
 
     #region 방 번호 / 팀 배정
-    // 대기 화면 상단에 방 번호를 표시 (BasicSpawner가 세션 시작 직후 1회 호출).
-    public void SetRoomCode(string code)
-    {
-        if (roomCodeText != null) roomCodeText.text = $"방 번호: {code}";
-    }
-
     // 이 클라이언트의 팀을 배정 (0: White, 1: Black). BasicSpawner가 인원 2명 도달 시 1회 호출.
     public void AssignLocalTeam(int team)
     {

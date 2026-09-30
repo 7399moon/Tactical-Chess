@@ -45,7 +45,8 @@ public partial class CardSelectionManager : MonoBehaviour
     [SerializeField] private PromotionOptionData bishopPromotionData;
 
     [Header("Augment Limit Settings")]
-    [SerializeField] private int maxAugmentCount = 6;                       // 팀당 최대 증강 선택 제한 (기본 6개)
+    // 팀당 최대 증강 수는 로비 설정(MatchSettings.MaxAugments)을 따른다 (기본 6개).
+    private static int maxAugmentCount => MatchSettings.MaxAugments;
 
     [Header("Animation Settings")]
     [SerializeField] private float animDuration = 0.6f;
@@ -164,6 +165,7 @@ public partial class CardSelectionManager : MonoBehaviour
     public void ShowCardSelection(bool promotion = false, Vector2Int promotionTile = default, int team = 0)
     {
         if (IsSelecting) return;
+        if (!promotion && !MatchSettings.AugmentEnabled) return;
         if (!promotion && AugmentManager.Instance != null && AugmentManager.Instance.GetAcquiredCount(team) >= maxAugmentCount) return;
         if (!IsInteractiveForTeam(team)) return;
 
@@ -254,6 +256,7 @@ public partial class CardSelectionManager : MonoBehaviour
     // 대기열이 비어 체크포인트 자체가 열리지 않는다.
     public void TriggerAugmentCheckpoint()
     {
+        if (!MatchSettings.AugmentEnabled) return; // 증강 시스템 OFF
         teamsAwaitingPieceChoice.Clear();
         teamsAwaitingBoardTarget.Clear();
 

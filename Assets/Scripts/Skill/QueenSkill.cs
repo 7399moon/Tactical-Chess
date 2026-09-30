@@ -44,7 +44,7 @@ public class QueenSkill : MonoBehaviour
 
     #region 공개 상태 조회 및 스택 처리
     // 지정한 팀의 현재 아우라 스택 수치를 반환
-    public int GetStack(int team) => teamAuraStacks.TryGetValue(team, out int stack) ? stack : 0;
+    public int GetStack(int team) => !MatchSettings.SkillEnabled ? 0 : teamAuraStacks.TryGetValue(team, out int stack) ? stack : 0;
 
     // 유니크5(아우라 가속): 보유 시 발동에 필요한 스택이 1 감소
     public int GetRequiredStack(int team) =>
@@ -57,6 +57,7 @@ public class QueenSkill : MonoBehaviour
     public void NotifyPieceCaptured(ChessPieces attacker, ChessPieces victim)
     {
         if (victim == null) return;
+        if (!MatchSettings.SkillEnabled) return; // 스킬 시스템 OFF: 퀸 아우라도 비활성
 
         // 1. 피격당한 기물이 퀸일 경우: 팀 내 살아있는 다른 퀸이 없다면 스택 초기화
         if (IsQueen(victim))

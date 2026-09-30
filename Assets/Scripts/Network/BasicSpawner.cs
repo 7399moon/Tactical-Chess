@@ -15,7 +15,8 @@ public class BasicSpawner : MonoBehaviour, INetworkRunnerCallbacks
     public static BasicSpawner Instance { get; private set; }
 
     #region 인스펙터 설정값
-    [SerializeField] private string gameSceneName = "GameScene"; // Fusion 세션 시작 시 로드할 게임 씬 이름
+    [SerializeField] private string lobbySceneName = "LobbyScene"; // Fusion 세션 시작 시 가장 먼저 로드할 로비 씬 이름
+    [SerializeField] private string gameSceneName = "GameScene"; // 로비에서 "게임 시작" 시 로드할 게임 씬 이름
     [SerializeField] private string titleSceneName = "StartScene"; // "타이틀로 이동" 시 되돌아갈 타이틀 씬 이름
     [SerializeField] private UnityEngine.UI.Text roomCodeDisplayText; // 호스트가 생성한 방 번호를 보여줄 텍스트 (한글 표시를 위해 legacy Text 사용)
     [SerializeField] private NetworkPrefabRef chessSyncPrefab; // 체스 클릭 동기화용 네트워크 오브젝트 (호스트가 1회 스폰)
@@ -58,6 +59,12 @@ public class BasicSpawner : MonoBehaviour, INetworkRunnerCallbacks
         // UpdateGameStartState에서 바로 참조할 수 있도록 가장 먼저 저장해둔다.
         _roomCode = sessionCode;
 
+        // 새 세션이므로 로비/매치 공유 상태를 초기화한다(호스트는 자기 닉네임을 로비 슬롯에 채워둔다).
+        MatchSession.Reset();
+        LobbyState.Reset();
+        if (mode == GameMode.Host)
+            LobbyState.HostNick = PlayerProfile.Nickname;
+
         // Create the Fusion runner. 체스 동작은 전부 RPC(ChessNetworkSync)로 동기화되고
         // 틱 단위 입력(OnInput)이 필요 없으므로 ProvideInput은 사용하지 않는다.
         _runner = gameObject.AddComponent<NetworkRunner>();
@@ -82,19 +89,35 @@ public class BasicSpawner : MonoBehaviour, INetworkRunnerCallbacks
         if (startMenuEventSystem != null) startMenuEventSystem.SetActive(false);
         if (startMenuCamera != null) startMenuCamera.SetActive(false);
 
-        // 게임 씬은 씬 권한(호스트)만 로드하며, LoadSceneMode.Additive로 로드해 현재 씬(StartScene)을
+        // 로비 씬은 씬 권한(호스트)만 로드하며, LoadSceneMode.Additive로 로드해 현재 씬(StartScene)을
         // 언로드하지 않는다. 참가자(클라이언트)는 별도 호출 없이 자동으로 동기화되어 함께 로드된다.
         // (예전 코드는 StartGameArgs.Scene에 직접 씬을 지정해 기본 모드(Single)로 로드되어
         //  StartScene 자체가 언로드되는 문제가 있었다 - BasicSpawner도 함께 사라져 대기 화면/팀
         //  배정 로직이 전부 동작하지 않게 됨)
         if (_runner.IsSceneAuthority)
         {
-            var scene = SceneRef.FromIndex(SceneUtility.GetBuildIndexByScenePath($"Assets/Scenes/{gameSceneName}.unity"));
+            var scene = SceneRef.FromIndex(SceneUtility.GetBuildIndexByScenePath($"Assets/Scenes/{lobbySceneName}.unity"));
             if (scene.IsValid)
             {
                 _runner.LoadScene(scene, LoadSceneMode.Additive);
             }
         }
+    }
+
+    // 이 클라이언트가 호스트(서버)인지 (로비 UI에서 호스트 전용 조작 구분용)
+    public bool IsHost => _runner != null && _runner.IsServer;
+
+    // 현재 방 번호 (로비 UI 상단 표시용)
+    public string RoomCode => _roomCode;
+
+    // 로비 "게임 시작": 호스트(씬 권한자)가 GameScene을 Additive로 로드하면 게스트도 자동으로 따라 로드한다.
+    // 로비 씬은 언로드하지 않고(GameStartController가 시작 시 숨김) 그대로 둔다.
+    public void LoadGameScene()
+    {
+        if (_runner == null || !_runner.IsSceneAuthority) return;
+        var scene = SceneRef.FromIndex(SceneUtility.GetBuildIndexByScenePath($"Assets/Scenes/{gameSceneName}.unity"));
+        if (scene.IsValid)
+            _runner.LoadScene(scene, LoadSceneMode.Additive);
     }
 
     // 호스트로 새 방을 생성: 4자리 방 번호를 무작위로 만들고 화면에 표시한 뒤 세션을 시작한다.
@@ -131,6 +154,9 @@ public class BasicSpawner : MonoBehaviour, INetworkRunnerCallbacks
     private void ReturnToTitleScreen()
     {
         GameStartController.ResetLocalTeam();
+        MatchSession.Reset();
+        LobbyState.Reset();
+        PlayerProfile.ClearTeamNicknames(); // 이전 게임의 팀별 닉네임 초기화
         SceneManager.LoadScene(titleSceneName, LoadSceneMode.Single);
     }
 
@@ -164,7 +190,12 @@ public class BasicSpawner : MonoBehaviour, INetworkRunnerCallbacks
     //  잔재였고 게임 시작 시 화면에 불필요한 큐브가 보이는 원인이었다 - 스폰 로직 제거)
     public void OnPlayerJoined(NetworkRunner runner, PlayerRef player)
     {
-        UpdateGameStartState(runner);
+        // 호스트 본인이 세션에 들어온 시점에 ChessNetworkSync를 1회 스폰한다(세션 전체 동안 유지 - 로비 RPC도 사용).
+        if (runner.IsServer && player == runner.LocalPlayer && !_chessSyncSpawned)
+        {
+            runner.Spawn(chessSyncPrefab);
+            _chessSyncSpawned = true;
+        }
     }
 
     // 참가자가 나가면(호스트는 남아있는 경우) 호출되는 콜백. 이 콜백은 세션이 살아있는 쪽(=호스트)
@@ -178,47 +209,20 @@ public class BasicSpawner : MonoBehaviour, INetworkRunnerCallbacks
     // 인원이 2명 미만이 되면 방이 사라지고 시작 화면으로 복귀" 요구사항 - 예전에는 세션/방 번호를
     // 그대로 유지한 채 대기 화면만 다시 보여주는 "가벼운" 경로였으나, 두 이탈 경로의 결과를
     // 통일하기 위해 제거함).
+    //
+    // 2026-10-01 로비 도입: 로비 단계(MatchSession.InMatch == false)에서 게스트가 나가면 호스트는 로비에 남고
+    // 게스트 슬롯/선택만 초기화한다(D-1). 게임 단계에서 나가면 기존처럼 양쪽 모두 타이틀로 복귀한다.
     public void OnPlayerLeft(NetworkRunner runner, PlayerRef player)
     {
+        if (!MatchSession.InMatch && runner.IsServer)
+        {
+            LobbyState.ClearGuest();
+            ChessNetworkSync.Instance?.BroadcastLobby();
+            return;
+        }
         GoToTitle();
     }
 
-    // 현재 접속 인원 수에 따라 GameScene의 대기 상태(GameStartController)를 갱신하고,
-    // 인원이 2명이 되면 로컬 팀(백/흑)과 그에 맞는 카메라를 배정한 뒤 이동 동기화용
-    // 네트워크 오브젝트(ChessNetworkSync)를 호스트가 1회 스폰한다.
-    //
-    // OnPlayerJoined에서만 호출된다(OnPlayerLeft는 위에서 곧바로 GoToTitle()로 처리) - 따라서
-    // 아래 인원<2 분기는 "아직 두 번째 플레이어가 들어오기 전, 호스트 혼자 대기 중인 최초 상태"만
-    // 의미하며, 매치 도중 상대가 나가는 경우와는 더 이상 겹치지 않는다.
-    private void UpdateGameStartState(NetworkRunner runner)
-    {
-        var controllerObject = GameObject.Find("GameStartController");
-        var controller = controllerObject != null ? controllerObject.GetComponent<GameStartController>() : null;
-        if (controller == null) return;
-
-        controller.SetRoomCode(_roomCode);
-
-        if (runner.ActivePlayers.Count() >= RoomPlayerCount)
-        {
-            // 방 정원이 2명으로 고정되어 있으므로, 호스트=White(0) / 참가자=Black(1)으로 결정된다.
-            int localTeam = runner.IsServer ? 0 : 1;
-            controller.AssignLocalTeam(localTeam);
-            controller.AssignTeamCamera(localTeam);
-            controller.StartMatch();
-
-            if (runner.IsServer && !_chessSyncSpawned)
-            {
-                runner.Spawn(chessSyncPrefab);
-                _chessSyncSpawned = true;
-            }
-        }
-        else
-        {
-            // 아직 두 번째 플레이어가 들어오기 전(호스트 혼자 대기 중인 최초 상태) - 대기 화면을
-            // 보여준다. 이미 초기 상태인 매니저들을 다시 초기화할 뿐이라 안전하다.
-            controller.ResetAndShowWaiting();
-        }
-    }
     #endregion
 
     #region 예기치 않은 세션 종료 처리 (호스트가 사라져 세션이 끊긴 참가자 측)

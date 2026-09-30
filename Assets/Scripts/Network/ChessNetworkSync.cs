@@ -17,12 +17,41 @@ public class ChessNetworkSync : NetworkBehaviour
     public override void Spawned()
     {
         Instance = this;
+
+        // 내 닉네임을 상대에게 알린다(상대 화면의 닉네임 표시용).
+        ShareLocalNickname();
+
+        // 게스트(호스트가 아닌 쪽)는 스폰 직후 로비 입장 신고를 보낸다 -> 호스트가 게스트 슬롯을 채운다.
+        if (!Runner.IsServer)
+            RPC_LobbyGuestHello(PlayerProfile.Nickname);
     }
 
     private void OnDestroy()
     {
         if (Instance == this)
             Instance = null;
+    }
+    #endregion
+
+    #region 닉네임 교환
+    // 내 팀 번호와 닉네임을 모든 클라이언트에 전파한다. 팀 배정 전이면(LocalTeam < 0) 보내지 않는다.
+    public void ShareLocalNickname()
+    {
+        int team = GameStartController.LocalTeam;
+        if (team < 0) return;
+
+        RPC_ShareNickname(team, PlayerProfile.Nickname);
+    }
+
+    // 팀별 닉네임을 저장한다. 상대의 "새" 닉네임을 처음 받았다면 상대가 내 닉네임을 놓쳤을 수 있으므로
+    // 내 닉네임을 한 번 더 보낸다(이미 같은 값이면 회신하지 않으므로 무한 반복되지 않는다).
+    [Rpc(RpcSources.All, RpcTargets.All)]
+    public void RPC_ShareNickname(int team, string nickname)
+    {
+        bool changed = PlayerProfile.SetTeamNickname(team, nickname);
+
+        if (changed && team != GameStartController.LocalTeam)
+            ShareLocalNickname();
     }
     #endregion
 
@@ -91,6 +120,61 @@ public class ChessNetworkSync : NetworkBehaviour
     public void RPC_RelayRestartMatch()
     {
         GameStartController.Instance?.StartMatch();
+    }
+    #endregion
+
+    #region 로비 동기화 (호스트 권한자)
+    // 게스트 -> 호스트: 로비 입장 신고(닉네임). 호스트만 처리하고 전체 스냅샷을 다시 방송한다.
+    [Rpc(RpcSources.All, RpcTargets.All)]
+    public void RPC_LobbyGuestHello(string nickname)
+    {
+        if (!Runner.IsServer) return;
+        if (MatchSession.InMatch) return;
+        LobbyState.GuestNick = PlayerProfile.Normalize(nickname);
+        LobbyState.GuestPresent = true;
+        LobbyState.GuestPick = LobbyState.PickNone;
+        LobbyState.Notify();
+        BroadcastLobby();
+    }
+
+    // 게스트 -> 호스트: 진영 선택 요청. 호스트가 순서대로 검증(같은 색 중복 거부)한 뒤 스냅샷을 방송한다.
+    [Rpc(RpcSources.All, RpcTargets.All)]
+    public void RPC_LobbyRequestPick(int pick)
+    {
+        if (!Runner.IsServer) return;
+        if (MatchSession.InMatch) return;
+        LobbyState.TrySetPick(false, pick);
+        BroadcastLobby(); // 거부된 경우에도 게스트 화면을 권한자 상태로 되돌리기 위해 항상 방송
+    }
+
+    // 호스트: 현재 로비 상태 전체(닉네임/선택/규칙)를 모든 피어에 방송한다.
+    public void BroadcastLobby()
+    {
+        if (!Runner.IsServer) return;
+        MatchSettings.Normalize();
+        int flags = (MatchSettings.AugmentEnabled ? 1 : 0) | (MatchSettings.AugmentTimeLimit ? 2 : 0)
+                  | (MatchSettings.SkillEnabled ? 4 : 0) | (MatchSettings.TurnTimeLimit ? 8 : 0);
+        RPC_LobbySnapshot(LobbyState.HostNick, LobbyState.GuestNick, LobbyState.GuestPresent,
+            LobbyState.HostPick, LobbyState.GuestPick, flags, MatchSettings.MaxAugments, MatchSettings.TurnSeconds);
+    }
+
+    [Rpc(RpcSources.All, RpcTargets.All)]
+    public void RPC_LobbySnapshot(string hostNick, string guestNick, bool guestPresent, int hostPick, int guestPick,
+                                  int flags, int maxAugments, int turnSeconds)
+    {
+        if (Runner.IsServer) return; // 호스트는 이미 권한자 상태를 가지고 있다
+        if (MatchSession.InMatch) return;
+        MatchSettings.Apply((flags & 1) != 0, maxAugments, (flags & 2) != 0, (flags & 4) != 0, (flags & 8) != 0, turnSeconds);
+        LobbyState.ApplySnapshot(hostNick, guestNick, guestPresent, hostPick, guestPick);
+    }
+
+    // 호스트 -> 모두: 게임 시작. 호스트가 정한 호스트 팀(0/1)을 받아 각자 자기 팀/닉네임을 확정한다.
+    // 이 RPC 이후 호스트가 GameScene을 Additive로 로드하고, GameStartController가 MatchSession을 소비한다.
+    [Rpc(RpcSources.All, RpcTargets.All)]
+    public void RPC_LobbyStart(int hostTeam)
+    {
+        if (MatchSession.InMatch) return;
+        MatchSession.Begin(hostTeam, Runner.IsServer);
     }
     #endregion
 }

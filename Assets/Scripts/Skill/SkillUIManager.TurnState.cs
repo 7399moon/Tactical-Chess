@@ -4,6 +4,15 @@ using UnityEngine;
 public partial class SkillUIManager
 {
     #region 턴 및 상태 관리
+    // 로비 규칙(스킬 ON/OFF)을 UI에 반영: OFF면 스킬 버튼 5개와 턴 종료 버튼을 숨긴다.
+    // GameStartController.StartMatch()에서 매 판 시작 시 호출된다.
+    public void ApplyMatchSettings()
+    {
+        bool on = MatchSettings.SkillEnabled;
+        foreach (var b in new[] { knightButton, bishopButton, rookButton, queenButton, kingButton, endTurnButton })
+            if (b != null) b.gameObject.SetActive(on);
+    }
+
     public void SetSkillUsedThisTurn()
     {
         HasUsedSkillThisTurn = true;
@@ -82,6 +91,7 @@ public partial class SkillUIManager
     // 화면 표시(dimming)와 무관하게 계산한다. FindPiece는 SkillUIManager.UI.cs에 정의되어 있다.
     private bool HasAnyUsableSkillForActingTeam()
     {
+        if (!MatchSettings.SkillEnabled) return false; // 스킬 시스템 OFF: 이동만 하면 턴이 자동 종료된다
         int actingTeam = GameManager.Instance != null ? GameManager.Instance.CurrentTurn : 0;
 
         ChessPieces knight = FindPiece(ChessPieceType.WhiteKnight, actingTeam);

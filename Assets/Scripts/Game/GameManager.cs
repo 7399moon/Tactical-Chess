@@ -65,6 +65,7 @@ public class GameManager : MonoBehaviour
 
         if (turnTimeBar != null)
             turnTimeBar.SetActive(useTurnSystem);
+        RefreshBarVisibility();
 
         turnCount = 1;
         StartTurn(0); // 백팀(0)부터 게임 시작
@@ -73,7 +74,12 @@ public class GameManager : MonoBehaviour
     // 매 프레임 턴 타이머를 갱신 (턴 시스템 미사용/일시정지/게임종료 시 스킵)
     private void Update()
     {
+        // 증강 선택 제한 시간 표시 중에는 같은 세로 바를 선택 남은 시간 표시로 빌려 쓴다.
+        if (selectionBarValue >= 0f)
+            DrawBar(selectionBarValue);
+
         if (!useTurnSystem || isPaused) return;
+        if (!MatchSettings.TurnTimeLimit) return; // 턴 시간 제한 OFF: 무제한
 
         // 게임 종료 상태 시 타이머 업데이트 중단
         if (GameEndManager.Instance != null && GameEndManager.Instance.IsGameOver)
@@ -118,7 +124,7 @@ public class GameManager : MonoBehaviour
     private void StartTurn(int team)
     {
         currentTurn = team;
-        currentTurnTime = turnTime;
+        currentTurnTime = TurnLimitSeconds;
         hasMovedThisTurn = false;
 
         ResetAllPiecesTurnState();
@@ -228,6 +234,8 @@ public class GameManager : MonoBehaviour
         enPassantTarget = null;
         isPaused = false;
         turnCount = 1;
+        selectionBarValue = -1f;
+        RefreshBarVisibility();
 
         if (useTurnSystem)
             StartTurn(0); // 백팀(0)부터 다시 시작 (OnTurnStarted 이벤트로 다른 매니저들의 턴 상태도 함께 초기화됨)
@@ -240,7 +248,15 @@ public class GameManager : MonoBehaviour
     {
         if (fill == null) return;
 
-        float normalizedTime = currentTurnTime / turnTime;
+        if (selectionBarValue >= 0f) return; // 증강 선택 시간 표시 중에는 턴 타이머가 바를 건드리지 않는다
+        DrawBar(currentTurnTime / TurnLimitSeconds);
+    }
+
+    // 세로 바 Fill 갱신 + 색상(녹색 -> 노랑 -> 빨강)
+    private void DrawBar(float normalizedTime)
+    {
+        if (fill == null) return;
+        normalizedTime = Mathf.Clamp01(normalizedTime);
         fill.fillAmount = normalizedTime;
 
         // 시간에 따른 Lerp 색상 보정
@@ -248,6 +264,33 @@ public class GameManager : MonoBehaviour
             ? Color.Lerp(Color.yellow, Color.green, (normalizedTime - 0.5f) * 2f)
             : Color.Lerp(Color.red, Color.yellow, normalizedTime * 2f);
     }
+
+    #region 로비 규칙 적용 (MatchSettings)
+    // 이번 판 턴당 제한 시간(초): 로비에서 정한 값. (인스펙터 turnTime은 로비 없이 단독 실행할 때의 기본값)
+    private float TurnLimitSeconds => MatchSettings.TurnSeconds > 0 ? MatchSettings.TurnSeconds : turnTime;
+
+    // 증강 선택 제한 시간 표시용 오버라이드 값(0~1). 음수면 사용 안 함.
+    private float selectionBarValue = -1f;
+
+    // CardSelectionManager가 증강 선택 남은 시간을 세로 바에 표시/해제한다 (normalized < 0 이면 해제).
+    public void SetSelectionBar(float normalized)
+    {
+        bool wasActive = selectionBarValue >= 0f;
+        selectionBarValue = normalized < 0f ? -1f : Mathf.Clamp01(normalized);
+        if (wasActive != (selectionBarValue >= 0f)) RefreshBarVisibility();
+    }
+
+    // 턴 시간 제한 OFF면 시간 바(배경+Fill 이미지)만 숨긴다. 턴 수 텍스트(TurnCount)는 바의 자식이라
+    // 오브젝트를 끄지 않고 이미지 컴포넌트만 끈다. 증강 선택 시간 표시 중에는 다시 보여준다.
+    public void RefreshBarVisibility()
+    {
+        if (turnTimeBar == null) return;
+        bool visible = MatchSettings.TurnTimeLimit || selectionBarValue >= 0f;
+        foreach (var img in turnTimeBar.GetComponentsInChildren<Image>(true))
+            img.enabled = visible;
+        if (visible) UpdateTurnUI();
+    }
+    #endregion
 
     // 턴 수 표기 텍스트 갱신
     private void UpdateTurnCountUI()
