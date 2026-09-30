@@ -46,7 +46,7 @@
 Assets/Scripts/
 ├── Audio/          # SoundManager (SFX 16종 재생)
 ├── Augment/        # AugmentManager, Augmenteffects (팀별 증강 보유/효과 적용)
-├── Card/           # CardSelectionManager(.Data/.Selection), CardUI (카드 선택 UI/로직)
+├── Card/           # CardSelectionManager(.Data/.Selection/.Timer), CardUI, CardPanelLowerToggle (카드 선택 UI/로직/선택 제한 시간/패널 내리기)
 ├── Chess/
 │   ├── ChessBoard/   # ChessBoard, ChessInteractionManager(.Skills/.Promotion/.CheckState), BoardInputHandler, BoardTileHighlighter
 │   ├── ChessPieces/  # PieceMovement, PieceCapture, PIeceSelectionVFX
@@ -54,16 +54,18 @@ Assets/Scripts/
 │   └── Pieces/       # Bishop/King/Knight/Pawn/Queen/Rook, ChessPieces
 ├── Data/           # AugmentData/AugmentDatabase/PromotionOptionData (ScriptableObject)
 ├── Game/           # GameManager, GameEndManager, GameOverUI
-├── Network/        # BasicSpawner, ChessNetworkSync, GameStartController (Fusion 연동)
+├── Network/        # BasicSpawner, ChessNetworkSync, GameStartController, MatchSettings, PlayerProfile (Fusion 연동/대전 설정/닉네임)
+├── Settings/       # SettingsManager, SettingsPanelUI (음량/해상도/전체화면)
 ├── Skill/          # PieceSkillManager(.Skills/.Status), QueenSkill, SkillUIManager(.TurnState/.SkillHandlers/.UI)
-└── UI/             # AugmentViewUI, RoomCodePanelUI, StartMenu
+└── UI/             # AugmentViewUI, RoomCodePanelUI, StartMenu, LobbyController, NicknameInputUI, PlayerNameplateUI, TutorialPanelUI
 
 Assets/Data/
 ├── Augment/        # 증강 40종 .asset
 └── Promotion/      # 승급 옵션 4종 .asset (나이트/비숍/룩/퀸)
 
 Assets/Scenes/
-├── StartScene.unity   # 타이틀 - 방 생성/코드 입장
+├── StartScene.unity   # 타이틀 - 닉네임 입력, 방 생성/코드 입장, 튜토리얼
+├── LobbyScene.unity   # 대기실 - 방 코드, 플레이어 목록, 진영 선택, 대전 설정
 └── GameScene.unity    # 실제 대국 화면
 ```
 
@@ -79,6 +81,8 @@ Assets/Scenes/
   - **09-21**: 멀티플레이 버그 수정, 증강 데이터 정비
   - **09-22~23**: 스킬 5종(위협/쉴드/지휘/워프/프로모션) VFX 제작·연동, URP 셰이더 호환 문제 및 가시성 수정, 위협/쉴드 VFX를 실제 효과 지속시간과 동기화하도록 개선, 방 이탈 처리
 - **5. 효과음 (09-28)**: SoundManager 신규 구현, 16개 상황에 효과음 매핑 완료
+- **6. 배포 준비 (09-29)**: Git 저장소 생성, 사용하지 않는 효과음 팩 제거(사용 중인 15개만 `Audio/SFX`에 용도별 이름으로 정리), UI 에셋을 `Icons` 아래로 이동
+- **7. 로비와 편의 기능 (10-01)**: 닉네임 입력 및 게임 화면 닉네임 표시, 환경설정(음량/해상도/전체화면), 튜토리얼, 로비 씬(진영 선택, 호스트 전용 대전 설정), 대전 설정(증강·스킬·턴 시간 제한) 적용, 증강 선택 제한 시간과 카드 패널 내리기 버튼
 
 ## 알려진 이슈 / 남은 과제
 
