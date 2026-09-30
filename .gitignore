@@ -28,7 +28,8 @@
 *.unitypackage
 .consulo/
 crashlytics-build.properties
-Screenshots/
+/Screenshots/
+/Assets/Screenshots/
 "Claude outputs/"
 _incoming/
 [Ss]ymbols/

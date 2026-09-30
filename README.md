@@ -33,6 +33,24 @@
 ### SFX
 이동, 캡처, 턴 종료, 체크 진입, 게임 시작/승리/패배/무승부, 스킬 4종(위협/쉴드/워프/지휘), 프로모션, 스킬 버튼 클릭, 증강 카드 등장/선택 완료까지 총 16개 상황에 효과음이 매핑되어 있다.
 
+## 스크린샷
+
+| 시작 화면 | 방 번호 입력 | 로비 |
+| --- | --- | --- |
+| ![시작 화면](docs/screenshots/01-start-main.png) | ![방 번호 입력](docs/screenshots/02-start-room-code.png) | ![로비](docs/screenshots/06-lobby.png) |
+
+| 튜토리얼 - 체스 | 튜토리얼 - 스킬 | 튜토리얼 - 증강 |
+| --- | --- | --- |
+| ![튜토리얼 체스](docs/screenshots/03-tutorial-chess.png) | ![튜토리얼 스킬](docs/screenshots/04-tutorial-skills.png) | ![튜토리얼 증강](docs/screenshots/05-tutorial-augments.png) |
+
+| 게임 진행 | 증강 선택 | 프로모션 선택 |
+| --- | --- | --- |
+| ![게임 진행](docs/screenshots/07-game-board.png) | ![증강 선택](docs/screenshots/08-augment-select.png) | ![프로모션 선택](docs/screenshots/09-promotion-select.png) |
+
+| 보유 증강 확인 | 환경설정 | 게임 종료 |
+| --- | --- | --- |
+| ![보유 증강 확인](docs/screenshots/10-augment-view.png) | ![환경설정](docs/screenshots/11-settings.png) | ![게임 종료](docs/screenshots/12-game-over.png) |
+
 ## 기술 스택
 
 - **엔진**: Unity 6000.5.0f1 (Universal Render Pipeline)
