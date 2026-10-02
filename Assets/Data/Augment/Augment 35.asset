@@ -15,6 +15,6 @@ MonoBehaviour:
   augmentId: knight_execution
   displayName: "\uCC98\uD615\uC790\uC758 \uD45C\uC2DD"
   description: "\uC704\uD611 \uBC1C\uB3D9 \uC2DC \uB300\uC0C1 1\uBA85 \uCC98\uD615 (\uC0AC\uC6A9 \uC2DC \uC704\uD611 \uCFE8\uD0C0\uC784 +2\uD134)."
-  icon: {fileID: 1052858816, guid: d080d569605ae7c4fad024cfdd9afb92, type: 3}
+  icon: {fileID: -35113753, guid: 647ee414607dcda4ab8f7214f4f621c0, type: 3}
   rarity: 3
   relatedPieces: 2

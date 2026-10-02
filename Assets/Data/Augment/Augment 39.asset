@@ -15,6 +15,6 @@ MonoBehaviour:
   augmentId: king_regency
   displayName: "\uC12D\uC815"
   description: "\uC9C0\uD718 \uC0AC\uC6A9 \uC2DC \uD134 \uC18C\uBAA8 \uC5C6\uC74C (\uCFE8\uD0C0\uC784 8\u219212\uD134 \uC99D\uAC00)."
-  icon: {fileID: 1929609206, guid: d080d569605ae7c4fad024cfdd9afb92, type: 3}
+  icon: {fileID: 1266790313, guid: 647ee414607dcda4ab8f7214f4f621c0, type: 3}
   rarity: 3
   relatedPieces: 32

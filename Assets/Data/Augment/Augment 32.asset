@@ -15,6 +15,6 @@ MonoBehaviour:
   augmentId: queen_stack_gain_up
   displayName: "\uC5EC\uC655\uC758 \uC704\uC5C4"
   description: "\uC2A4\uD0DD \uD68D\uB4DD\uB7C9 +1."
-  icon: {fileID: 220152358, guid: bf424b556e2d473498d07be57f7a3cbf, type: 3}
+  icon: {fileID: 416868423, guid: cf2fe23fe23c78543bb1ee6ddef17349, type: 3}
   rarity: 2
   relatedPieces: 16

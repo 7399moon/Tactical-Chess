@@ -15,6 +15,6 @@ MonoBehaviour:
   augmentId: queen_aura_stack_reduction
   displayName: "\uC544\uC6B0\uB77C \uAC00\uC18D"
   description: "\uC544\uC6B0\uB77C \uBC1C\uB3D9 \uD544\uC694 \uC2A4\uD0DD -1."
-  icon: {fileID: -1387477886, guid: bf424b556e2d473498d07be57f7a3cbf, type: 3}
+  icon: {fileID: 1693801295, guid: cf2fe23fe23c78543bb1ee6ddef17349, type: 3}
   rarity: 2
   relatedPieces: 16

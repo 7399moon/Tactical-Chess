@@ -15,6 +15,6 @@ MonoBehaviour:
   augmentId: rook_shield_range_up
   displayName: "\uC274\uB4DC \uD655\uC7A5"
   description: "\uC274\uB4DC \uBC94\uC704 \uC99D\uAC00."
-  icon: {fileID: 842198132, guid: 1e61fdbcb6e247a489251df9336374f9, type: 3}
+  icon: {fileID: -488428850, guid: 8f6b6cbdc76ab4d499a63eee39c92700, type: 3}
   rarity: 1
   relatedPieces: 8

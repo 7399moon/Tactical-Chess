@@ -15,6 +15,6 @@ MonoBehaviour:
   augmentId: queen_stack_on_kill
   displayName: "\uC5EC\uC655\uC758 \uC0AC\uB0E5"
   description: "\uD038\uC774 \uC9C1\uC811 \uCC98\uCE58 \uC2DC \uC2A4\uD0DD \uD68D\uB4DD\uB7C9 +1."
-  icon: {fileID: -1659894530, guid: 1e61fdbcb6e247a489251df9336374f9, type: 3}
+  icon: {fileID: 1834748216, guid: 8f6b6cbdc76ab4d499a63eee39c92700, type: 3}
   rarity: 1
   relatedPieces: 16

@@ -39,7 +39,7 @@ public partial class CardSelectionManager
 
             if (i < picked.Count && picked[i] != null)
             {
-                card.SetVisual(picked[i].icon, picked[i].displayName, picked[i].description);
+                card.SetVisual(picked[i].icon, picked[i].displayName, picked[i].description, picked[i].rarity); // [변경] 등급 전달
             }
         }
     }

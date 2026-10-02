@@ -19,10 +19,12 @@ public class TutorialPanelUI : MonoBehaviour
     [SerializeField] private RectTransform augmentContent; // GridLayoutGroup(4열) 부모
     [SerializeField] private AugmentDatabase augmentDatabase;
     [SerializeField] private Font font;
+    [SerializeField] private Sprite[] rarityFrames = new Sprite[4]; // [변경] 0 노말, 1 레어, 2 유니크, 3 레전더리 카드 프레임
     #endregion
 
-    private static readonly Color TabNormal = new Color(0.22f, 0.22f, 0.27f, 1f);
-    private static readonly Color TabSelected = new Color(0.95f, 0.75f, 0.2f, 1f);
+    // 탭 버튼은 btn_normal 하나를 쓰고 선택 여부는 틴트로만 구분한다.
+    private static readonly Color TabNormal = Color.white;
+    private static readonly Color TabSelected = new Color(1f, 0.78f, 0.3f, 1f);
     private bool augmentsBuilt;
 
     #region 튜토리얼 본문
@@ -124,36 +126,47 @@ public class TutorialPanelUI : MonoBehaviour
         var list = augmentDatabase.allAugments.Where(a => a != null)
             .OrderBy(a => a.rarity).ThenBy(a => a.displayName).ToList();
         if (augmentHeader != null)
-            augmentHeader.text = $"총 {list.Count}종 · 10턴마다 두 플레이어가 각자 증강 카드 1장을 고릅니다 (등급: 노말 < 레어 < 유니크 < 레전더리)";
+            augmentHeader.text = $"총 {list.Count}종 · 10턴마다 두 플레이어가 각자 증강 카드 1장을 고릅니다 (등급: 노말(동) < 레어(은) < 유니크(금) < 레전더리(청))";
+
+        // [변경] 카드 프레임(464x760 비율)에 맞춰 셀 크기와 열 수를 조정 (5열)
+        const float W = 270f, H = 442f;
+        var grid = augmentContent.GetComponent<GridLayoutGroup>();
+        if (grid != null)
+        {
+            grid.cellSize = new Vector2(W, H);
+            grid.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
+            grid.constraintCount = 5;
+            grid.childAlignment = TextAnchor.UpperCenter; // [변경] 가운데 정렬
+        }
 
         foreach (var a in list)
         {
             var card = new GameObject(a.displayName, typeof(RectTransform), typeof(Image));
             card.transform.SetParent(augmentContent, false);
-            card.GetComponent<Image>().color = new Color(0.12f, 0.12f, 0.16f, 1f);
+            var frame = card.GetComponent<Image>();
+            int fi = Mathf.Clamp((int)a.rarity, 0, 3);
+            frame.sprite = rarityFrames != null && fi < rarityFrames.Length ? rarityFrames[fi] : null;
+            frame.color = frame.sprite != null ? Color.white : new Color(0.12f, 0.12f, 0.16f, 1f);
+            frame.raycastTarget = false;
 
-            var bar = NewImage(card.transform, "Rarity Bar", RarityColor(a.rarity));
-            bar.rectTransform.anchorMin = new Vector2(0, 1); bar.rectTransform.anchorMax = new Vector2(1, 1);
-            bar.rectTransform.pivot = new Vector2(0.5f, 1); bar.rectTransform.sizeDelta = new Vector2(0, 40);
-            var rar = NewText(bar.transform, "Rarity", RarityName(a.rarity), 24, FontStyle.Bold, Color.white, TextAnchor.MiddleCenter);
-            Stretch(rar.rectTransform);
-
+            // [변경] 프레임의 영역 비율: 아트 중심 0.32 / 이름 바 0.62 / 설명 0.71~0.93
             var icon = NewImage(card.transform, "Icon", Color.white);
             icon.sprite = a.icon; icon.preserveAspect = true; icon.enabled = a.icon != null;
             icon.rectTransform.anchorMin = icon.rectTransform.anchorMax = new Vector2(0.5f, 1);
-            icon.rectTransform.pivot = new Vector2(0.5f, 1);
-            icon.rectTransform.sizeDelta = new Vector2(150, 150); icon.rectTransform.anchoredPosition = new Vector2(0, -50);
+            icon.rectTransform.pivot = new Vector2(0.5f, 0.5f);
+            icon.rectTransform.sizeDelta = new Vector2(170, 170); icon.rectTransform.anchoredPosition = new Vector2(0, -H * 0.32f);
 
-            var name = NewText(card.transform, "Name", a.displayName, 30, FontStyle.Bold, Color.white, TextAnchor.MiddleCenter);
+            var name = NewText(card.transform, "Name", a.displayName, 24, FontStyle.Bold, Color.white, TextAnchor.MiddleCenter);
+            name.resizeTextForBestFit = true; name.resizeTextMinSize = 14; name.resizeTextMaxSize = 24;
             name.rectTransform.anchorMin = name.rectTransform.anchorMax = new Vector2(0.5f, 1);
-            name.rectTransform.pivot = new Vector2(0.5f, 1);
-            name.rectTransform.sizeDelta = new Vector2(330, 44); name.rectTransform.anchoredPosition = new Vector2(0, -210);
+            name.rectTransform.pivot = new Vector2(0.5f, 0.5f);
+            name.rectTransform.sizeDelta = new Vector2(W * 0.8f, 40); name.rectTransform.anchoredPosition = new Vector2(0, -H * 0.62f);
 
-            var desc = NewText(card.transform, "Description", a.description, 24, FontStyle.Normal, new Color(0.88f, 0.88f, 0.92f), TextAnchor.UpperCenter);
+            var desc = NewText(card.transform, "Description", a.description, 20, FontStyle.Normal, new Color(0.92f, 0.9f, 0.85f), TextAnchor.UpperCenter);
             desc.horizontalOverflow = HorizontalWrapMode.Wrap; desc.verticalOverflow = VerticalWrapMode.Truncate;
-            desc.resizeTextForBestFit = true; desc.resizeTextMinSize = 16; desc.resizeTextMaxSize = 24;
+            desc.resizeTextForBestFit = true; desc.resizeTextMinSize = 12; desc.resizeTextMaxSize = 20;
             desc.rectTransform.anchorMin = new Vector2(0, 0); desc.rectTransform.anchorMax = new Vector2(1, 1);
-            desc.rectTransform.offsetMin = new Vector2(16, 12); desc.rectTransform.offsetMax = new Vector2(-16, -262);
+            desc.rectTransform.offsetMin = new Vector2(W * 0.1f, H * 0.075f); desc.rectTransform.offsetMax = new Vector2(-W * 0.1f, -H * 0.72f);
         }
     }
 

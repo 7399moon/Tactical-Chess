@@ -15,6 +15,6 @@ MonoBehaviour:
   augmentId: bishop_double_warp
   displayName: "\uC5F0\uC18D \uC6CC\uD504"
   description: "\uC6CC\uD504\uB97C 1\uD134\uC5D0 2\uD68C \uC0AC\uC6A9 \uAC00\uB2A5 (\uC0AC\uC6A9 \uC2DC \uCFE8\uD0C0\uC784 +2\uD134)."
-  icon: {fileID: 973487452, guid: bf424b556e2d473498d07be57f7a3cbf, type: 3}
+  icon: {fileID: 1050504899, guid: cf2fe23fe23c78543bb1ee6ddef17349, type: 3}
   rarity: 2
   relatedPieces: 4

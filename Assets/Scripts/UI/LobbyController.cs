@@ -36,15 +36,20 @@ public class LobbyController : MonoBehaviour
     [SerializeField] private Text hintText;
     [SerializeField] private Button leaveButton;
 
+    [Header("토글 스프라이트 (ON/OFF 글자가 그림에 포함되어 있다)")]
+    [SerializeField] private Sprite toggleOnSprite;
+    [SerializeField] private Sprite toggleOffSprite;
+
     [Header("게임 시작 시 숨길 루트들 (Canvas, Camera, EventSystem 등)")]
     [SerializeField] private GameObject[] rootsToHide;
     #endregion
 
-    private static readonly Color Normal = new Color(0.22f, 0.22f, 0.27f, 1f);
-    private static readonly Color Selected = new Color(0.95f, 0.75f, 0.2f, 1f);
-    private static readonly Color Disabled = new Color(0.12f, 0.12f, 0.14f, 0.85f);
-    private static readonly Color OnColor = new Color(0.2f, 0.55f, 0.3f, 1f);
-    private static readonly Color OffColor = new Color(0.45f, 0.2f, 0.2f, 1f);
+    // 버튼 상태 표현: 스프라이트는 하나(btn_normal)이고 Image.color 틴트로만 구분한다.
+    // - 기본: 흰색(원본 색) / 선택됨: 금색 틴트 / 시작 가능: 연초록 틴트
+    // - 비활성/눌림/마우스 올림은 Button.colors(ColorTint)가 처리한다.
+    private static readonly Color Normal = Color.white;
+    private static readonly Color Selected = new Color(1f, 0.78f, 0.3f, 1f);
+    private static readonly Color StartReady = new Color(0.75f, 1f, 0.75f, 1f);
 
     private bool IsHost => BasicSpawner.Instance != null && BasicSpawner.Instance.IsHost;
     private bool starting;
@@ -203,7 +208,7 @@ public class LobbyController : MonoBehaviour
         startButton.gameObject.SetActive(host);
         bool can = host && !starting && LobbyState.CanStart;
         startButton.interactable = can;
-        startButton.image.color = can ? OnColor : Disabled;
+        startButton.image.color = can ? StartReady : Normal;
         if (startButtonLabel != null) startButtonLabel.text = starting ? "시작 중..." : "게임 시작";
         if (hintText != null)
             hintText.text = starting ? "게임을 불러오는 중..."
@@ -217,20 +222,22 @@ public class LobbyController : MonoBehaviour
         bool blockedByOther = pickValue != LobbyState.PickRandom && other == pickValue;
         bool interact = canPick && !blockedByOther;
         b.interactable = interact;
-        b.image.color = mine == pickValue ? Selected : (interact ? Normal : Disabled);
+        b.image.color = mine == pickValue ? Selected : Normal;
     }
 
     private void SetToggle(Button b, Text label, bool on, bool interactable)
     {
         b.interactable = interactable;
-        label.text = on ? "ON" : "OFF";
-        b.image.color = interactable ? (on ? OnColor : OffColor) : (on ? OnColor * 0.6f : OffColor * 0.6f);
+        label.text = on ? "ON" : "OFF"; // 그림에 글자가 있으므로 라벨은 숨김 상태로 두되 값은 유지
+        if (toggleOnSprite != null && toggleOffSprite != null)
+            b.image.sprite = on ? toggleOnSprite : toggleOffSprite;
+        b.image.color = Normal;
     }
 
     private void SetBtn(Button b, bool interactable)
     {
         b.interactable = interactable;
-        b.image.color = interactable ? Normal : Disabled;
+        b.image.color = Normal;
     }
     #endregion
 

@@ -15,6 +15,6 @@ MonoBehaviour:
   augmentId: rook_self_shield
   displayName: "\uC790\uCCB4 \uBC29\uBCBD"
   description: "\uC274\uB4DC\uB97C \uC790\uAE30 \uC790\uC2E0\uC5D0\uAC8C\uB3C4 \uC0AC\uC6A9 \uAC00\uB2A5."
-  icon: {fileID: 842198132, guid: 1e61fdbcb6e247a489251df9336374f9, type: 3}
+  icon: {fileID: -488428850, guid: 8f6b6cbdc76ab4d499a63eee39c92700, type: 3}
   rarity: 1
   relatedPieces: 8

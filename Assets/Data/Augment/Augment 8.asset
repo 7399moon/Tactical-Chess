@@ -15,6 +15,6 @@ MonoBehaviour:
   augmentId: knight_conscription
   displayName: "\uB098\uC774\uD2B8 \uC9D5\uC9D1"
   description: "\uD3F0 2\uAC1C \uD76C\uC0DD \u2192 1\uB7AD\uD06C\uC5D0 \uB098\uC774\uD2B8 \uC0DD\uC131."
-  icon: {fileID: 1533518249, guid: c5f34a2a37347984b8ce8eb64c20b899, type: 3}
+  icon: {fileID: -1269587460, guid: 0fa05d50bab34da43a6e26b06aa80a8f, type: 3}
   rarity: 0
   relatedPieces: 2

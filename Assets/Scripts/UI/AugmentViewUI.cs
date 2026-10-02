@@ -127,7 +127,7 @@ public class AugmentViewUI : MonoBehaviour
 
             CardUI card = Instantiate(heldCardPrefab, cardContent);
             card.gameObject.SetActive(true);
-            card.SetVisual(data.icon, data.displayName, data.description);
+            card.SetVisual(data.icon, data.displayName, data.description, data.rarity); // [변경] 등급 전달
             card.SetInteractable(false); // 읽기 전용 표시: 클릭/호버 반응 없음
             spawnedCards.Add(card.gameObject);
         }

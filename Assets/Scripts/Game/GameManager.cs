@@ -14,6 +14,7 @@ public class GameManager : MonoBehaviour
 
     [Header("Turn UI")]
     [SerializeField] private Image fill;                  // 시간 표시 Fill Image
+    [SerializeField] private RectTransform fillWave;       // [변경] 액체 윗면(물결) 이미지: Fill 끝을 따라 이동 (선택 사항)
     [SerializeField] private GameObject turnTimeBar;       // 시간바 부모 오브젝트
     [SerializeField] private Text turnCountText;          // 턴 진행 수 표시 텍스트
     #endregion
@@ -252,17 +253,30 @@ public class GameManager : MonoBehaviour
         DrawBar(currentTurnTime / TurnLimitSeconds);
     }
 
-    // 세로 바 Fill 갱신 + 색상(녹색 -> 노랑 -> 빨강)
+    // 세로 바 Fill 갱신 + 물결 위치. [변경] 새 시간바 아트(주황 액체)를 쓰므로 평소엔 원본 색을 유지하고,
+    // 남은 시간이 25% 이하일 때만 붉게 물들인다.
     private void DrawBar(float normalizedTime)
     {
         if (fill == null) return;
         normalizedTime = Mathf.Clamp01(normalizedTime);
         fill.fillAmount = normalizedTime;
 
-        // 시간에 따른 Lerp 색상 보정
-        fill.color = normalizedTime > 0.5f
-            ? Color.Lerp(Color.yellow, Color.green, (normalizedTime - 0.5f) * 2f)
-            : Color.Lerp(Color.red, Color.yellow, normalizedTime * 2f);
+        fill.color = normalizedTime > 0.25f
+            ? Color.white
+            : Color.Lerp(new Color(1f, 0.35f, 0.3f, 1f), Color.white, normalizedTime / 0.25f);
+
+        if (fillWave != null)
+        {
+            float h = fill.rectTransform.rect.height;
+            float wh = fillWave.rect.height;
+            // 2026-10-02 수정: wave는 하단 피벗(0.5, 0)이라 anchoredPosition.y가 곧 wave의 "아랫변" 위치.
+            // 기존엔 fill 윗면(normalizedTime * h)보다 wh*0.6만큼 아래에 둬서 wave가 액체 속에 파묻힌 것처럼
+            // 보였음 - wave 아랫변을 fill 윗면과 정확히 일치시키도록 오프셋 제거(가득 찼을 때만 바 밖으로
+            // 안 튀어나오게 h - wh로 계속 clamp).
+            float y = Mathf.Min(normalizedTime * h, h - wh);
+            fillWave.anchoredPosition = new Vector2(0f, y);
+            fillWave.gameObject.SetActive(normalizedTime > 0.01f);
+        }
     }
 
     #region 로비 규칙 적용 (MatchSettings)

@@ -15,6 +15,6 @@ MonoBehaviour:
   augmentId: bishop_warp_swap
   displayName: "\uC6CC\uD504 \uC2A4\uC651"
   description: "\uC6CC\uD504 \uBC94\uC704 \uB0B4 \uC544\uAD70\uACFC \uC790\uB9AC \uAD50\uCCB4 \uAC00\uB2A5 (\uC6CC\uD504\uB85C \uD310\uC815)."
-  icon: {fileID: -1741156295, guid: 1e61fdbcb6e247a489251df9336374f9, type: 3}
+  icon: {fileID: -173043293, guid: 8f6b6cbdc76ab4d499a63eee39c92700, type: 3}
   rarity: 1
   relatedPieces: 4

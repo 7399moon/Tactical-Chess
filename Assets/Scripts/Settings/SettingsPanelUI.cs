@@ -30,9 +30,10 @@ public class SettingsPanelUI : MonoBehaviour
     [SerializeField] private Button fullScreenButton;
 
     [Header("버튼 색상")]
-    [SerializeField] private Color normalColor = new Color(0.30f, 0.30f, 0.34f, 1f);
-    [SerializeField] private Color selectedColor = new Color(0.20f, 0.45f, 0.85f, 1f);
-    [SerializeField] private Color unavailableColor = new Color(0.16f, 0.16f, 0.18f, 1f);
+    // 버튼 스프라이트(btn_normal)에 곱해지는 틴트: 기본 = 원본색, 선택 = 금색, 사용 불가 = 어둡게
+    [SerializeField] private Color normalColor = Color.white;
+    [SerializeField] private Color selectedColor = new Color(1f, 0.78f, 0.3f, 1f);
+    [SerializeField] private Color unavailableColor = new Color(0.45f, 0.45f, 0.45f, 1f);
     #endregion
 
     #region 내부 상태

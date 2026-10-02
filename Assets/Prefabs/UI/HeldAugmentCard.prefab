@@ -34,8 +34,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 1}
   m_AnchorMax: {x: 0.5, y: 1}
-  m_AnchoredPosition: {x: 0, y: -252}
-  m_SizeDelta: {x: 130, y: 168}
+  m_AnchoredPosition: {x: 0, y: -314.59998}
+  m_SizeDelta: {x: 208, y: 88}
   m_Pivot: {x: 0.5, y: 1}
 --- !u!222 &891817358477887774
 CanvasRenderer:
@@ -69,14 +69,14 @@ MonoBehaviour:
     m_Font: {fileID: 10102, guid: 0000000000000000e000000000000000, type: 0}
     m_FontSize: 16
     m_FontStyle: 1
-    m_BestFit: 0
+    m_BestFit: 1
     m_MinSize: 10
-    m_MaxSize: 40
-    m_Alignment: 4
+    m_MaxSize: 16
+    m_Alignment: 1
     m_AlignByGeometry: 0
     m_RichText: 1
     m_HorizontalOverflow: 0
-    m_VerticalOverflow: 1
+    m_VerticalOverflow: 0
     m_LineSpacing: 1
   m_Text: 
 --- !u!1 &1692933731632853720
@@ -113,9 +113,9 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 1}
   m_AnchorMax: {x: 0.5, y: 1}
-  m_AnchoredPosition: {x: 0, y: -60}
-  m_SizeDelta: {x: 130, y: 130}
-  m_Pivot: {x: 0.5, y: 1}
+  m_AnchoredPosition: {x: 0, y: -140.8}
+  m_SizeDelta: {x: 182, y: 182}
+  m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &6266205428598941399
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -146,7 +146,7 @@ MonoBehaviour:
       m_Calls: []
   m_Sprite: {fileID: 0}
   m_Type: 0
-  m_PreserveAspect: 0
+  m_PreserveAspect: 1
   m_FillCenter: 1
   m_FillMethod: 4
   m_FillAmount: 1
@@ -188,9 +188,9 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 1}
   m_AnchorMax: {x: 0.5, y: 1}
-  m_AnchoredPosition: {x: 0, y: -200}
-  m_SizeDelta: {x: 150, y: 37}
-  m_Pivot: {x: 0.5, y: 1}
+  m_AnchoredPosition: {x: 0, y: -272.8}
+  m_SizeDelta: {x: 213.2, y: 33}
+  m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &267637726527139861
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -223,9 +223,9 @@ MonoBehaviour:
     m_Font: {fileID: 10102, guid: 0000000000000000e000000000000000, type: 0}
     m_FontSize: 22
     m_FontStyle: 1
-    m_BestFit: 0
+    m_BestFit: 1
     m_MinSize: 10
-    m_MaxSize: 40
+    m_MaxSize: 22
     m_Alignment: 4
     m_AlignByGeometry: 0
     m_RichText: 1
@@ -303,7 +303,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: 15671c5fd3b1b75479af29a734bf85e6, type: 3}
+  m_Sprite: {fileID: 21300000, guid: 7e6725f6fe4eb8e4a82bf5a0f3e77c16, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -345,5 +345,10 @@ MonoBehaviour:
   iconImage: {fileID: 26889488778815631}
   nameText: {fileID: 1602813245976644135}
   descriptionText: {fileID: 3981094945994742883}
+  frameImage: {fileID: 2476730052377366673}
+  frameNormal: {fileID: 21300000, guid: 7e6725f6fe4eb8e4a82bf5a0f3e77c16, type: 3}
+  frameRare: {fileID: 21300000, guid: 0b61090f3a0c3e94bb5a563512e3169d, type: 3}
+  frameUnique: {fileID: 21300000, guid: 25b21c98edd7e524b9b545c74908145e, type: 3}
+  frameLegendary: {fileID: 21300000, guid: 0b532c9bb817eb84c95e3c28a36ab208, type: 3}
   hoverColor: {r: 0, g: 1, b: 1, a: 1}
   selectColor: {r: 1, g: 0.8, b: 0, a: 1}

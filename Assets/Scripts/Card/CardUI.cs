@@ -16,6 +16,13 @@ public class CardUI : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler, 
     [SerializeField] private Text nameText;             // 기물/증강 이름
     [SerializeField] private Text descriptionText;      // 기물/증강 설명
 
+    [Header("Rarity Frames")] // [변경] 등급별 카드 프레임 스프라이트
+    [SerializeField] private Image frameImage;          // 카드 루트 Image (비어 있으면 자동 캐싱)
+    [SerializeField] private Sprite frameNormal;
+    [SerializeField] private Sprite frameRare;
+    [SerializeField] private Sprite frameUnique;
+    [SerializeField] private Sprite frameLegendary;
+
     [Header("Outline Colors")]
     [SerializeField] private Color hoverColor = new Color(0f, 1f, 1f, 1f);      // 호버 시 색상 (예: 시안)
     [SerializeField] private Color selectColor = new Color(1f, 0.8f, 0f, 1f);   // 클릭 시 색상 (예: 골드)
@@ -30,6 +37,8 @@ public class CardUI : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler, 
     #region 유니티 생명주기
     private void Awake()
     {
+        if (frameImage == null) frameImage = GetComponent<Image>(); // [변경]
+
         // 아웃라인 자동 캐싱 및 기본 비활성화
         if (cardOutline == null)
             cardOutline = GetComponent<Outline>();
@@ -44,11 +53,33 @@ public class CardUI : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler, 
 
     #region 초기화 및 콘텐츠 설정
     // 카드 UI의 이미지와 텍스트 데이터를 설정
+    // [변경] 등급 미지정(기물/프로모션 카드)은 노말 프레임을 사용한다.
     public void SetVisual(Sprite icon, string cardName, string description)
+        => SetVisual(icon, cardName, description, AugmentRarity.Normal);
+
+    // [변경] 등급별 프레임 적용 오버로드
+    public void SetVisual(Sprite icon, string cardName, string description, AugmentRarity rarity)
     {
+        SetFrame(rarity);
         if (iconImage != null) iconImage.sprite = icon;
         if (nameText != null) nameText.text = cardName;
         if (descriptionText != null) descriptionText.text = description;
+    }
+
+    // [변경] 등급에 맞는 프레임 스프라이트로 교체
+    public void SetFrame(AugmentRarity rarity)
+    {
+        if (frameImage == null) frameImage = GetComponent<Image>();
+        if (frameImage == null) return;
+
+        Sprite s = rarity switch
+        {
+            AugmentRarity.Rare => frameRare,
+            AugmentRarity.Unique => frameUnique,
+            AugmentRarity.Legendary => frameLegendary,
+            _ => frameNormal
+        };
+        if (s != null) frameImage.sprite = s;
     }
 
     // 카드 초기화 및 클릭 이벤트 콜백을 등록.

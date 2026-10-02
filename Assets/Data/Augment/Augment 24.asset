@@ -15,6 +15,6 @@ MonoBehaviour:
   augmentId: queen_conscription
   displayName: "\uD038 \uC9D5\uC9D1"
   description: "\uD3F0 5\uAC1C \uD76C\uC0DD \u2192 1\uB7AD\uD06C\uC5D0 \uD038 \uC0DD\uC131."
-  icon: {fileID: -388262496, guid: 1e61fdbcb6e247a489251df9336374f9, type: 3}
+  icon: {fileID: 275075988, guid: 8f6b6cbdc76ab4d499a63eee39c92700, type: 3}
   rarity: 1
   relatedPieces: 16

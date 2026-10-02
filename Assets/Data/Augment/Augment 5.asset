@@ -15,6 +15,6 @@ MonoBehaviour:
   augmentId: pawn_revive
   displayName: "\uD3F0 \uC18C\uC0DD"
   description: "\uC8FD\uC740 \uD3F0 1\uAC1C\uAC00 2\uB7AD\uD06C\uC5D0 \uBD80\uD65C."
-  icon: {fileID: -1491112768, guid: c5f34a2a37347984b8ce8eb64c20b899, type: 3}
+  icon: {fileID: -652208489, guid: 0fa05d50bab34da43a6e26b06aa80a8f, type: 3}
   rarity: 0
   relatedPieces: 1

@@ -15,6 +15,6 @@ MonoBehaviour:
   augmentId: rook_shield_target_up
   displayName: "\uAD11\uC5ED \uC218\uD638"
   description: "\uC274\uB4DC \uB300\uC0C1 +1\uBA85."
-  icon: {fileID: -1510963752, guid: bf424b556e2d473498d07be57f7a3cbf, type: 3}
+  icon: {fileID: 659557785, guid: cf2fe23fe23c78543bb1ee6ddef17349, type: 3}
   rarity: 2
   relatedPieces: 8

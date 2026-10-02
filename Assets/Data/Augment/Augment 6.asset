@@ -15,6 +15,6 @@ MonoBehaviour:
   augmentId: pawn_awakening
   displayName: "\uD3F0\uC758 \uAC01\uC131"
   description: "6\uB7AD\uD06C \uB3C4\uB2EC \uC2DC \uC2B9\uAE09 \uC804\uAE4C\uC9C0 \uB300\uAC01\uC120 \uC774\uB3D9\uB3C4 \uAC00\uB2A5."
-  icon: {fileID: 1590517199, guid: c5f34a2a37347984b8ce8eb64c20b899, type: 3}
+  icon: {fileID: -314142336, guid: 0fa05d50bab34da43a6e26b06aa80a8f, type: 3}
   rarity: 0
   relatedPieces: 1

@@ -15,6 +15,6 @@ MonoBehaviour:
   augmentId: pawn_instant_minor_promote
   displayName: "\uC989\uC11D \uC2B9\uAE09"
   description: "\uD3F0 1\uAC1C\uB97C \uC989\uC2DC \uB098\uC774\uD2B8 \uB610\uB294 \uBE44\uC20D\uC73C\uB85C \uC2B9\uAE09 (1\uD68C)."
-  icon: {fileID: 21300000, guid: b5d1a898d274da747985876abf8b4ed4, type: 3}
+  icon: {fileID: 21300000, guid: 7876f2d00a4133840a8bfb3868bdd005, type: 3}
   rarity: 0
   relatedPieces: 6

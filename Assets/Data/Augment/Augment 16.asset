@@ -15,6 +15,6 @@ MonoBehaviour:
   augmentId: knight_cooldown_on_kill
   displayName: "\uC0AC\uB0E5\uAFBC\uC758 \uBCF8\uB2A5"
   description: "\uB098\uC774\uD2B8\uAC00 \uC801 \uCC98\uCE58 \uC2DC \uC704\uD611 \uCFE8\uD0C0\uC784 1\uD134 \uAC10\uC18C."
-  icon: {fileID: 41942573, guid: 1e61fdbcb6e247a489251df9336374f9, type: 3}
+  icon: {fileID: 776623906, guid: 8f6b6cbdc76ab4d499a63eee39c92700, type: 3}
   rarity: 1
   relatedPieces: 2

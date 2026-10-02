@@ -15,6 +15,6 @@ MonoBehaviour:
   augmentId: rook_instant_queen_promote
   displayName: "\uC989\uC704"
   description: "\uB8E9 1\uAC1C\uB97C \uC989\uC2DC \uD038\uC73C\uB85C \uC2B9\uAE09 (1\uD68C)."
-  icon: {fileID: 21300000, guid: 658fbf3734894dd4e8ef7f8a74a529bb, type: 3}
+  icon: {fileID: 21300000, guid: c6db9d767e5e654419f4d39ad450d890, type: 3}
   rarity: 2
   relatedPieces: 16

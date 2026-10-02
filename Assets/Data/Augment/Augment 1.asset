@@ -15,6 +15,6 @@ MonoBehaviour:
   augmentId: pawn_triple_step
   displayName: "\uC0BC\uBCF4 \uC804\uC9C4"
   description: "\uD3F0 \uCCAB \uC774\uB3D9 \uC2DC 3\uCE78 \uC804\uC9C4 \uAC00\uB2A5."
-  icon: {fileID: 1590517199, guid: c5f34a2a37347984b8ce8eb64c20b899, type: 3}
+  icon: {fileID: -314142336, guid: 0fa05d50bab34da43a6e26b06aa80a8f, type: 3}
   rarity: 0
   relatedPieces: 1

@@ -15,6 +15,6 @@ MonoBehaviour:
   augmentId: king_range_up
   displayName: "\uC655\uC758 \uBCF4\uD3ED"
   description: "\uD0B9\uC774 \uD55C \uD134\uC5D0 \uD55C \uBC88 \uB354 \uC774\uB3D9 \uAC00\uB2A5 (\uC774\uB3D9 \uD69F\uC218 +1)."
-  icon: {fileID: -1667092044, guid: c5f34a2a37347984b8ce8eb64c20b899, type: 3}
+  icon: {fileID: -561846350, guid: 0fa05d50bab34da43a6e26b06aa80a8f, type: 3}
   rarity: 0
   relatedPieces: 32

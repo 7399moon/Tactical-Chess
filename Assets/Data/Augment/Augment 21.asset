@@ -15,6 +15,6 @@ MonoBehaviour:
   augmentId: rook_cooldown_on_kill
   displayName: "\uC218\uD638\uC790\uC758 \uC751\uC9D5"
   description: "\uB8E9\uC774 \uC801 \uCC98\uCE58 \uC2DC \uC274\uB4DC \uCFE8\uD0C0\uC784 1\uD134 \uAC10\uC18C."
-  icon: {fileID: -1278184827, guid: 1e61fdbcb6e247a489251df9336374f9, type: 3}
+  icon: {fileID: 318475710, guid: 8f6b6cbdc76ab4d499a63eee39c92700, type: 3}
   rarity: 1
   relatedPieces: 8

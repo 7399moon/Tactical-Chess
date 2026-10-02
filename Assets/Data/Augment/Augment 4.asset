@@ -15,6 +15,6 @@ MonoBehaviour:
   augmentId: rook_pass_through
   displayName: "\uAD00\uD1B5 \uB3CC\uACA9"
   description: "\uC774\uB3D9 \uACBD\uB85C\uC758 \uC544\uAD70 \uAE30\uBB3C 1\uAC1C\uAE4C\uC9C0 \uD1B5\uACFC \uAC00\uB2A5."
-  icon: {fileID: -1701649500, guid: c5f34a2a37347984b8ce8eb64c20b899, type: 3}
+  icon: {fileID: -1168522841, guid: 0fa05d50bab34da43a6e26b06aa80a8f, type: 3}
   rarity: 0
   relatedPieces: 8

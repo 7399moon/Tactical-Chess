@@ -15,6 +15,6 @@ MonoBehaviour:
   augmentId: queen_aura_double_promote
   displayName: "\uC5EC\uC655\uC758 \uCD95\uBCF5"
   description: "\uC544\uC6B0\uB77C \uBC1C\uB3D9 \uC2DC \uB450 \uB2E8\uACC4 \uC2B9\uAE09."
-  icon: {fileID: 1429798361, guid: d080d569605ae7c4fad024cfdd9afb92, type: 3}
+  icon: {fileID: -1977875990, guid: 647ee414607dcda4ab8f7214f4f621c0, type: 3}
   rarity: 3
   relatedPieces: 16

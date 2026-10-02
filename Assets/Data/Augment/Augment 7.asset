@@ -15,6 +15,6 @@ MonoBehaviour:
   augmentId: knight_straight_charge
   displayName: "\uBC15\uCC28 \uAC00\uD558\uAE30"
   description: "\uB098\uC774\uD2B8 \uC774\uB3D9 \uACBD\uB85C\uC5D0 \uC9C1\uC120 2\uCE78\uC774 \uCD94\uAC00."
-  icon: {fileID: 1336503795, guid: c5f34a2a37347984b8ce8eb64c20b899, type: 3}
+  icon: {fileID: 2116872123, guid: 0fa05d50bab34da43a6e26b06aa80a8f, type: 3}
   rarity: 0
   relatedPieces: 2

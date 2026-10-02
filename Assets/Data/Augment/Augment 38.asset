@@ -15,6 +15,6 @@ MonoBehaviour:
   augmentId: queen_revive
   displayName: "\uBD88\uBA78\uC758 \uC5EC\uC655"
   description: "\uC8FD\uC740 \uD038 1\uAC1C\uAC00 1\uB7AD\uD06C\uC5D0 \uBD80\uD65C."
-  icon: {fileID: 21300000, guid: d204fe9b47789074db67dda6df747d78, type: 3}
+  icon: {fileID: 21300000, guid: 20e64b496edf81546bec7992630dcb25, type: 3}
   rarity: 3
   relatedPieces: 16

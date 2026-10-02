@@ -20,11 +20,17 @@ public class PlayerNameplateUI : MonoBehaviour
     [SerializeField] private Image topChip;
     [SerializeField] private Text topLabel;
 
-    [Header("색상")]
-    [SerializeField] private Color plateNormalColor = new Color(0.10f, 0.10f, 0.12f, 0.80f);
-    [SerializeField] private Color plateTurnColor = new Color(0.55f, 0.40f, 0.05f, 0.92f);
-    [SerializeField] private Color whiteChipColor = new Color(0.97f, 0.97f, 0.97f, 1f);
-    [SerializeField] private Color blackChipColor = new Color(0.05f, 0.05f, 0.05f, 1f);
+    [Header("진영 아이콘 (킹) / 아이콘 뒤 원형 배경")]
+    [SerializeField] private Sprite whiteKingSprite;
+    [SerializeField] private Sprite blackKingSprite;
+    [SerializeField] private Image bottomBadge;
+    [SerializeField] private Image topBadge;
+
+    [Header("색상 (패널 스프라이트에 곱해지는 틴트)")]
+    [SerializeField] private Color plateNormalColor = new Color(1f, 1f, 1f, 0.92f);
+    [SerializeField] private Color plateTurnColor = new Color(1f, 0.78f, 0.3f, 1f);
+    [SerializeField] private Color whiteBadgeColor = new Color(0.22f, 0.22f, 0.25f, 1f);   // 백 킹(흰색)은 어두운 배경 위에
+    [SerializeField] private Color blackBadgeColor = new Color(0.92f, 0.92f, 0.9f, 1f);    // 흑 킹(검정)은 밝은 배경 위에
     #endregion
 
     #region 내부 상태
@@ -73,11 +79,11 @@ public class PlayerNameplateUI : MonoBehaviour
         shownLocalTeam = localTeam;
         shownTurn = turn;
 
-        Apply(bottomPlate, bottomChip, bottomLabel, localTeam, turn, isMine: true);
-        Apply(topPlate, topChip, topLabel, opponentTeam, turn, isMine: false);
+        Apply(bottomPlate, bottomChip, bottomBadge, bottomLabel, localTeam, turn, isMine: true);
+        Apply(topPlate, topChip, topBadge, topLabel, opponentTeam, turn, isMine: false);
     }
 
-    private void Apply(Image plate, Image chip, Text label, int team, int currentTurn, bool isMine)
+    private void Apply(Image plate, Image chip, Image badge, Text label, int team, int currentTurn, bool isMine)
     {
         string name = PlayerProfile.GetTeamNickname(team);
         if (string.IsNullOrEmpty(name))
@@ -85,7 +91,8 @@ public class PlayerNameplateUI : MonoBehaviour
         if (isMine) name += " (나)";
 
         if (label != null) label.text = name;
-        if (chip != null) chip.color = team == 0 ? whiteChipColor : blackChipColor;
+        if (chip != null) chip.sprite = team == 0 ? whiteKingSprite : blackKingSprite;
+        if (badge != null) badge.color = team == 0 ? whiteBadgeColor : blackBadgeColor;
         if (plate != null) plate.color = (team == currentTurn) ? plateTurnColor : plateNormalColor;
     }
     #endregion
