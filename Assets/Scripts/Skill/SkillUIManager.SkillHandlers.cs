@@ -89,6 +89,9 @@ public partial class SkillUIManager
     }
 
     // 비숍이 워프 가능한 타일 목록을 계산 (증강 보유 시 아군/적이 있는 칸도 포함)
+    // 2026-10-03 수정: 워프 직후에는 IsWarpPendingMove 제약으로 "방금 워프한 비숍"만 이동할 수 있는데,
+    // 워프 도착 칸에서 그 비숍이 둘 수 있는 합법적인 수가 하나도 없으면(사면이 기물에 막히는 등) 어떤
+    // 기물도 움직일 수 없는 상태로 게임이 멈춰버렸다. 그런 칸은 애초에 워프 후보에서 제외한다.
     public List<Vector2Int> GetWarpTiles(ChessPieces bishop, ChessBoard board)
     {
         List<Vector2Int> validWarpTiles = new List<Vector2Int>();
@@ -107,14 +110,58 @@ public partial class SkillUIManager
                 continue;
 
             ChessPieces occupant = board.GetPieceAt(targetX, targetY);
-            bool valid = occupant == null
-                || (occupant.team == bishop.team && canSwap)
-                || (occupant.team != bishop.team && canAttack);
+            bool isSwapCase = occupant != null && occupant.team == bishop.team && canSwap;
+            bool isAttackCase = occupant != null && occupant.team != bishop.team && canAttack;
+            bool valid = occupant == null || isSwapCase || isAttackCase;
+
+            if (valid && !WouldHaveLegalMoveAfterWarp(bishop, new Vector2Int(targetX, targetY), occupant, isSwapCase, board))
+                valid = false;
 
             if (valid)
                 validWarpTiles.Add(new Vector2Int(targetX, targetY));
         }
         return validWarpTiles;
+    }
+
+    // targetPos로 워프를 가정하고, 그 위치에서 bishop이 이후 최소 1개의 합법적인 일반 이동을 가질 수
+    // 있는지 시뮬레이션한다(보드를 실제로 가상 이동시켰다가 끝나면 원상 복구). 스왑이 아닌 경우(빈 칸
+    // 이동/차원 암살 처치)는 occupant가 대상 칸에서 사라지는 결과가 동일하므로 같은 분기로 처리한다.
+    private bool WouldHaveLegalMoveAfterWarp(ChessPieces bishop, Vector2Int targetPos, ChessPieces occupant, bool isSwapCase, ChessBoard board)
+    {
+        if (bishop == null || board == null) return false;
+
+        int fromX = bishop.currentX;
+        int fromY = bishop.currentY;
+        Vector2Int? enPassantTarget = GameManager.Instance != null ? GameManager.Instance.EnPassantTarget : null;
+
+        // 가상 워프 적용
+        board.SetPieceAt(fromX, fromY, null);
+        board.SetPieceAt(targetPos.x, targetPos.y, bishop);
+        bishop.currentX = targetPos.x;
+        bishop.currentY = targetPos.y;
+
+        if (isSwapCase && occupant != null)
+        {
+            board.SetPieceAt(fromX, fromY, occupant);
+            occupant.currentX = fromX;
+            occupant.currentY = fromY;
+        }
+
+        bool hasMove = ChessRules.GetLegalMoves(board.Pieces, bishop, enPassantTarget).Count > 0;
+
+        // 원상 복구
+        bishop.currentX = fromX;
+        bishop.currentY = fromY;
+        board.SetPieceAt(targetPos.x, targetPos.y, occupant);
+        board.SetPieceAt(fromX, fromY, bishop);
+
+        if (isSwapCase && occupant != null)
+        {
+            occupant.currentX = targetPos.x;
+            occupant.currentY = targetPos.y;
+        }
+
+        return hasMove;
     }
 
     // 유니크2(연속 워프): 방금 워프한 비숍으로 한 번 더 워프할 수 있도록 스킬 모드를 재진입시킴

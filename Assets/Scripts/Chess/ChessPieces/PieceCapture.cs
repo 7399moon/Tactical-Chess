@@ -27,6 +27,7 @@ public class PieceCapture : MonoBehaviour
         if (PieceSkillManager.Instance != null && PieceSkillManager.Instance.IsShielded(victim))
         {
             Debug.Log($"[{victim.name}] 기물은 쉴드 상태이므로 공격당하지 않습니다.");
+            CenterAnnouncer.Show("쉴드 효과로 보호받고 있어 공격할 수 없습니다.");
             return;
         }
 

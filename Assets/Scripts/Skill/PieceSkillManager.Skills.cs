@@ -10,14 +10,18 @@ public partial class PieceSkillManager
     public bool TryUseThreat(ChessPieces knight, ChessPieces target) =>
         TryUseThreat(knight, target != null ? new List<ChessPieces> { target } : null);
 
-    // 유니크1(다중 위협) 보유 시 대상 2명을 동시에 지정 가능
-    public bool TryUseThreat(ChessPieces knight, List<ChessPieces> targets)
+    // 유니크1(다중 위협) 보유 시 대상 2명을 동시에 지정 가능.
+    // 2026-10-03 수정: 다중 위협 증강 보유 시 2명을 채우지 못하면 위협이 아예 발동되지 않아,
+    // 적이 사정거리 안에 1명뿐인 상황에서는 위협을 쓸 방법이 없었다. bypassMinimumCount를 true로
+    // 넘기면(같은 대상을 재클릭해 "이 인원으로 바로 발동" 의사를 표시한 경우) 목표 인원 미달이어도
+    // 지금까지 고른 대상만으로 발동을 허용한다. 대상이 0명이면 당연히 허용하지 않는다.
+    public bool TryUseThreat(ChessPieces knight, List<ChessPieces> targets, bool bypassMinimumCount = false)
     {
         if (knight == null || targets == null || targets.Count == 0 || IsOnCooldown(knight))
             return false;
 
         int requiredCount = HasAugment(knight.team, "knight_threat_target_up") ? 2 : 1;
-        if (targets.Count < requiredCount) return false;
+        if (!bypassMinimumCount && targets.Count < requiredCount) return false;
 
         // 레어1(위협 확장): AugmentManager에 누적된 범위 보너스를 실제로 반영
         int range = 1 + (AugmentManager.Instance != null ? AugmentManager.Instance.GetKnightThreatRangeBonus(knight.team) : 0);
@@ -161,14 +165,17 @@ public partial class PieceSkillManager
     public bool TryUseShield(ChessPieces rook, ChessPieces target, bool canTargetSelf = false) =>
         TryUseShield(rook, target != null ? new List<ChessPieces> { target } : null);
 
-    // 유니크3(광역 수호) 보유 시 대상 2명을 동시에 지정 가능
-    public bool TryUseShield(ChessPieces rook, List<ChessPieces> targets)
+    // 유니크3(광역 수호) 보유 시 대상 2명을 동시에 지정 가능.
+    // 2026-10-04 수정: 나이트 위협(TryUseThreat)과 동일한 이유로 bypassMinimumCount 추가 - 광역 수호
+    // 보유 시 2명을 채우지 못하면(사정거리 안에 아군이 1명뿐인 등) 쉴드를 영영 쓸 수 없었다. 같은 대상을
+    // 재클릭하면(ChessInteractionManager.Skills.cs) 목표 인원 미달이어도 지금까지 고른 대상만으로 발동한다.
+    public bool TryUseShield(ChessPieces rook, List<ChessPieces> targets, bool bypassMinimumCount = false)
     {
         if (rook == null || targets == null || targets.Count == 0 || IsOnCooldown(rook))
             return false;
 
         int requiredCount = HasAugment(rook.team, "rook_shield_target_up") ? 2 : 1;
-        if (targets.Count < requiredCount) return false;
+        if (!bypassMinimumCount && targets.Count < requiredCount) return false;
 
         // 레어8(자체 방벽): 증강 보유 시 자기 자신 타겟팅을 자동으로 허용
         bool allowSelfTarget = HasAugment(rook.team, "rook_self_shield");
@@ -219,6 +226,7 @@ public partial class PieceSkillManager
         if (!HasAnyLegalMove(target))
         {
             Debug.Log("[지휘] 지정한 기물은 현재 이동할 수 없어 지휘 대상으로 선택할 수 없습니다.");
+            CenterAnnouncer.Show("이동할 수 없는 기물은 지휘 대상으로 선택할 수 없습니다.");
             return false;
         }
 

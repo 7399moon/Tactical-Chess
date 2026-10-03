@@ -51,15 +51,30 @@ public partial class ChessInteractionManager
                 {
                     case PendingSkillType.Knight:
                         ChessPieces knight = SkillUIManager.Instance.MovedPieceThisTurn;
-                        if (knight != null && clickedPiece != null && clickedPiece.team != knight.team && !pendingMultiTargets.Contains(clickedPiece))
+                        if (knight != null && clickedPiece != null && clickedPiece.team != knight.team)
                         {
-                            // 유니크1 [다중 위협]: 보유 시 대상을 2명 순차 클릭으로 지정
+                            // 유니크1 [다중 위협]: 보유 시 대상을 2명 순차 클릭으로 지정.
+                            // 2026-10-03 수정: 이미 선택해 둔 대상을 다시 클릭하면, 목표 인원(2명)을 다
+                            // 채우지 못했어도 "지금까지 고른 인원만으로 바로 발동"으로 해석한다. 기존에는
+                            // 사정거리 안에 적이 1명뿐이면 2번째 대상을 고를 수 없어 위협을 영영 쓸 수 없었다.
+                            if (pendingMultiTargets.Contains(clickedPiece))
+                            {
+                                if (PieceSkillManager.Instance != null && PieceSkillManager.Instance.TryUseThreat(knight, new List<ChessPieces>(pendingMultiTargets), bypassMinimumCount: true))
+                                {
+                                    Debug.Log("[Skill] 나이트 위협 발동 성공 (대상 재클릭으로 조기 발동)");
+                                    skillSuccess = true;
+                                }
+                                pendingMultiTargets.Clear();
+                                break;
+                            }
+
                             int requiredCount = (AugmentManager.Instance != null && AugmentManager.Instance.HasAugment(knight.team, "knight_threat_target_up")) ? 2 : 1;
                             pendingMultiTargets.Add(clickedPiece);
 
                             if (pendingMultiTargets.Count < requiredCount)
                             {
-                                Debug.Log($"[Skill] 위협 대상 선택됨 ({pendingMultiTargets.Count}/{requiredCount}). 대상을 더 선택하세요.");
+                                Debug.Log($"[Skill] 위협 대상 선택됨 ({pendingMultiTargets.Count}/{requiredCount}). 대상을 더 선택하거나, 선택한 대상을 다시 클릭하면 그 인원만으로 발동합니다.");
+                                CenterAnnouncer.Show("위협 대상을 한 명 더 선택하거나, 선택한 대상을 다시 클릭하면 그 인원만으로 발동합니다.");
                                 return; // 아직 대상 선택 중이므로 이번 클릭은 여기서 종료
                             }
 
@@ -74,15 +89,29 @@ public partial class ChessInteractionManager
 
                     case PendingSkillType.Rook:
                         ChessPieces rook = SkillUIManager.Instance.MovedPieceThisTurn;
-                        if (rook != null && clickedPiece != null && clickedPiece.team == rook.team && !pendingMultiTargets.Contains(clickedPiece))
+                        if (rook != null && clickedPiece != null && clickedPiece.team == rook.team)
                         {
+                            // 2026-10-04 수정: 나이트 위협과 동일하게, 이미 선택해 둔 대상을 다시 클릭하면
+                            // 목표 인원(2명)을 다 채우지 못했어도 지금까지 고른 인원만으로 바로 발동한다.
+                            if (pendingMultiTargets.Contains(clickedPiece))
+                            {
+                                if (PieceSkillManager.Instance != null && PieceSkillManager.Instance.TryUseShield(rook, new List<ChessPieces>(pendingMultiTargets), bypassMinimumCount: true))
+                                {
+                                    Debug.Log("[Skill] 룩 쉴드 발동 성공 (대상 재클릭으로 조기 발동)");
+                                    skillSuccess = true;
+                                }
+                                pendingMultiTargets.Clear();
+                                break;
+                            }
+
                             // 유니크3 [광역 수호]: 보유 시 대상을 2명 순차 클릭으로 지정
                             int requiredCount = (AugmentManager.Instance != null && AugmentManager.Instance.HasAugment(rook.team, "rook_shield_target_up")) ? 2 : 1;
                             pendingMultiTargets.Add(clickedPiece);
 
                             if (pendingMultiTargets.Count < requiredCount)
                             {
-                                Debug.Log($"[Skill] 쉴드 대상 선택됨 ({pendingMultiTargets.Count}/{requiredCount}). 대상을 더 선택하세요.");
+                                Debug.Log($"[Skill] 쉴드 대상 선택됨 ({pendingMultiTargets.Count}/{requiredCount}). 대상을 더 선택하거나, 선택한 대상을 다시 클릭하면 그 인원만으로 발동합니다.");
+                                CenterAnnouncer.Show("수호 대상을 한 명 더 선택하거나, 선택한 대상을 다시 클릭하면 그 인원만으로 발동합니다.");
                                 return;
                             }
 
@@ -254,6 +283,7 @@ public partial class ChessInteractionManager
         if (hasKingStride && movedPiece.moveCountThisTurn == 1)
         {
             Debug.Log("[왕의 보폭] 추가 이동 1회 가능! 턴이 유지됩니다.");
+            CenterAnnouncer.Show("왕의 보폭 효과로 추가 이동 1회가 주어졌습니다.");
             SkillUIManager.Instance.IsKingDoubleMoveActive = true;
         }
     }

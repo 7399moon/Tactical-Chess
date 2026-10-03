@@ -30,6 +30,22 @@ public partial class SkillUIManager
         HasUsedSkillThisTurn = false;
 
         IsKingDoubleMoveActive = false;
+
+        // 2026-10-03 수정: 턴이 시작될 때(=상대/내 턴이 끝난 직후) 이전 턴에 켜져 있던 스킬 범위
+        // 하이라이트(위협/쉴드 등)가 그대로 남아있던 문제의 안전망. 정상 흐름이면 OnEndTurnButtonClicked()
+        // 에서 이미 정리되지만, 혹시 다른 경로로 턴이 넘어가도 여기서 한 번 더 확실히 지운다.
+        ChessInteractionManager.Instance?.ClearCustomHighlights();
+
+        // 2026-10-04 추가: 킹 지휘를 사용한 뒤, 지휘 대상 팀의 턴이 돌아왔을 때 "이번 턴에 지휘 대상을
+        // N회 이동시켜야 한다"는 걸 화면 중앙 안내로 알려준다. (지휘 자체는 지휘를 사용한 즉시 그 턴
+        // 안에서 2회 이동으로 끝나는 경우가 보통이지만, 섭정 등으로 턴이 유지되지 않고 넘어간 뒤 다시
+        // 돌아오는 경우를 위한 안내)
+        var psm = PieceSkillManager.Instance;
+        if (psm != null && psm.IsCommandActive && psm.CommandedPiece != null && psm.CommandedPiece.team == newTurnTeam)
+        {
+            CenterAnnouncer.Show($"지휘 효과: 지정한 기물을 이번 턴에 {psm.CommandMovesLeft}회 이동시켜야 합니다.");
+        }
+
         RefreshUIState();
     }
 
@@ -94,8 +110,12 @@ public partial class SkillUIManager
         if (!MatchSettings.SkillEnabled) return false; // 스킬 시스템 OFF: 이동만 하면 턴이 자동 종료된다
         int actingTeam = GameManager.Instance != null ? GameManager.Instance.CurrentTurn : 0;
 
-        ChessPieces knight = FindPiece(ChessPieceType.WhiteKnight, actingTeam);
-        ChessPieces rook = FindPiece(ChessPieceType.WhiteRook, actingTeam);
+        // 2026-10-03 수정: 나이트/룩은 팀당 2기(승급 시 더 늘어날 수도 있음)라서 FindPiece의
+        // "보드를 좌표 순으로 스캔해 처음 찾은 한 개"로는 실제로 방금 이동한 기물을 특정할 수 없다.
+        // ResolveMovedOrFirst(SkillUIManager.UI.cs)가 이번 턴에 이동한 기물이 있으면 그 인스턴스를
+        // 우선 사용하도록 처리한다.
+        ChessPieces knight = ResolveMovedOrFirst(ChessPieceType.WhiteKnight, actingTeam);
+        ChessPieces rook = ResolveMovedOrFirst(ChessPieceType.WhiteRook, actingTeam);
 
         bool isMovedKnight = HasMovedThisTurn && MovedPieceThisTurn == knight;
         bool canUseKnight = !HasUsedSkillThisTurn && isMovedKnight
@@ -131,6 +151,12 @@ public partial class SkillUIManager
     public void OnEndTurnButtonClicked()
     {
         ActiveSkillType = PendingSkillType.None;
+
+        // 2026-10-03 수정: 턴 종료 시 위협/쉴드 등 스킬 범위 하이라이트가 화면에 그대로 남아있던
+        // 문제 수정. 스킬 버튼을 다시 토글(OnSkillPendingChanged)하지 않고 턴이 끝나는 경우
+        // (자동 종료 포함) 하이라이트가 지워지지 않았으므로 턴 종료 시점에 명시적으로 정리한다.
+        ChessInteractionManager.Instance?.ClearCustomHighlights();
+
         GameManager.Instance?.PieceMoved();
     }
     #endregion

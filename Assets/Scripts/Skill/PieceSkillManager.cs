@@ -70,6 +70,8 @@ public partial class PieceSkillManager : MonoBehaviour
     #region 외부 공개 프로퍼티
     public bool IsCommandActive => commandedPiece != null && commandMovesLeft > 0;
     public ChessPieces CommandedPiece => commandedPiece;
+    // 2026-10-04 추가: 턴 시작 시 "지휘 대상을 N회 더 이동시켜야 합니다" 화면 안내(CenterAnnouncer)에 사용.
+    public int CommandMovesLeft => commandMovesLeft;
     #endregion
 
     #region 유니티 생명주기

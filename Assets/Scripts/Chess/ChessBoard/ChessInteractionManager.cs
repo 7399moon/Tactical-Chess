@@ -173,6 +173,7 @@ public partial class ChessInteractionManager : MonoBehaviour
         if (PieceSkillManager.Instance != null && PieceSkillManager.Instance.IsImmobilized(piece))
         {
             Debug.Log($"[{piece.name}] 기물은 위협 상태(이동 불가)입니다.");
+            CenterAnnouncer.Show("위협 효과로 인해 이번 턴에는 이동할 수 없습니다.");
             return false;
         }
 

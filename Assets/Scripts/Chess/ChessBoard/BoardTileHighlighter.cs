@@ -134,8 +134,15 @@ public class BoardTileHighlighter : MonoBehaviour
     }
 
     // 모든 custom 타일 하이라이트를 초기화
+    // 2026-10-03 수정: 턴 시작 시 안전망으로 ChessInteractionManager.ClearCustomHighlights()를
+    // 거쳐 이 메서드가 호출되도록 했는데, 게임 첫 턴(GameManager.Start() -> StartTurn(0))은
+    // 스크립트 실행 순서상 Initialize()가 아직 호출되기 전(=tileHighlightStates가 null인 상태)에
+    // 실행될 수 있어 NullReferenceException이 발생했다. 초기화 전이면 지울 하이라이트도 없으므로
+    // 그냥 조용히 반환한다.
     public void ClearCustomHighlights()
     {
+        if (tileHighlightStates == null) return;
+
         for (int x = 0; x < ChessBoard.TileCountX; x++)
         {
             for (int y = 0; y < ChessBoard.TileCountY; y++)

@@ -41,6 +41,13 @@ public partial class ChessInteractionManager
     // 아래 세 메서드는 BoardTileHighlighter 호출을 외부(GameEndManager 등)에 중계하는 역할만 한다.
     public void HighlightCheckmateAttackers(List<Vector2Int> attackerTiles) => tileHighlighter?.HighlightCheckmateAttackers(attackerTiles);
     public void HighlightCustomTiles(List<Vector2Int> tiles) => tileHighlighter?.HighlightCustomTiles(tiles);
-    public void ClearCustomHighlights() => tileHighlighter?.ClearCustomHighlights();
+    // 2026-10-03 수정: 스킬 범위 하이라이트와 다중 타겟 선택 상태는 항상 한 쌍으로 취급해야 한다.
+    // 턴 종료 시 이 메서드만 호출해도 하이라이트와 선택 중이던 대상 목록이 함께 초기화되도록
+    // pendingMultiTargets.Clear()도 같이 수행한다 (HandleSkillPendingChanged와 동일한 짝).
+    public void ClearCustomHighlights()
+    {
+        tileHighlighter?.ClearCustomHighlights();
+        pendingMultiTargets.Clear();
+    }
     #endregion
 }

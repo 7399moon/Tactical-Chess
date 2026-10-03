@@ -28,6 +28,7 @@ public class PieceMovement : MonoBehaviour
             if (PieceSkillManager.Instance != null && PieceSkillManager.Instance.IsShielded(targetPiece))
             {
                 Debug.Log("대상 기물은 쉴드 상태여서 공격할 수 없습니다.");
+                CenterAnnouncer.Show("쉴드 효과로 보호받고 있어 공격할 수 없습니다.");
                 return;
             }
         }
@@ -35,6 +36,7 @@ public class PieceMovement : MonoBehaviour
         if (PieceSkillManager.Instance != null && PieceSkillManager.Instance.IsImmobilized(piece))
         {
             Debug.Log("위협 상태로 인해 이동 불가능합니다.");
+            CenterAnnouncer.Show("위협 효과로 인해 이번 턴에는 이동할 수 없습니다.");
             return;
         }
 
@@ -43,6 +45,7 @@ public class PieceMovement : MonoBehaviour
             if (SkillUIManager.Instance.WarpBishopPiece != piece)
             {
                 Debug.Log("워프 직후에는 워프한 비숍만 이동할 수 있습니다.");
+                CenterAnnouncer.Show("워프 직후에는 워프한 비숍만 이동할 수 있습니다.");
                 return;
             }
         }
@@ -67,11 +70,13 @@ public class PieceMovement : MonoBehaviour
                 if (!PieceSkillManager.Instance.CommandTargetHasLegalMove())
                 {
                     Debug.Log("[지휘] 지휘 대상 기물이 더 이상 이동할 수 없어 지휘 효과를 종료합니다.");
+                    CenterAnnouncer.Show("지휘 대상이 더 이상 이동할 수 없어 지휘 효과가 종료되었습니다.");
                     PieceSkillManager.Instance.ForceEndCommand();
                 }
                 else if (piece != commandTarget)
                 {
                     Debug.LogWarning("지휘 스킬이 활성화된 상태에서는 지휘 대상 기물만 이동할 수 있습니다.");
+                    CenterAnnouncer.Show("지휘 효과가 활성화된 동안에는 지정한 기물만 이동할 수 있습니다.");
                     return;
                 }
             }
