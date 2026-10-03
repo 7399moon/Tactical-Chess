@@ -51,6 +51,12 @@
 | --- | --- | --- |
 | ![보유 증강 확인](docs/screenshots/10-augment-view.png) | ![환경설정](docs/screenshots/11-settings.png) | ![게임 종료](docs/screenshots/12-game-over.png) |
 
+## 게임 다운로드
+
+- Windows 64비트 빌드: [Releases](https://github.com/7399moon/Tactical-Chess/releases)에서 `TacticalChess-win64.zip`을 받는다.
+- 압축을 풀고 `Tactical Chess.exe`를 실행한다.
+- 2인 온라인 대전이라 두 사람 모두 인터넷 연결이 필요하다. 한 명이 방을 만들고(HOST) 방 코드를 알려주면, 다른 한 명이 코드를 입력해 입장한다(JOIN).
+
 ## 기술 스택
 
 - **엔진**: Unity 6000.5.0f1 (Universal Render Pipeline)
