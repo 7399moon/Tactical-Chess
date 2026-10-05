@@ -34,7 +34,12 @@ public partial class PieceSkillManager
         }
 
         // 레전더리1(처형자의 표식): 대상 중 1명을 즉시 처형 (사용 시 쿨타임 2턴 증가)
-        bool executes = HasAugment(knight.team, "knight_execution");
+        // 2026-10-05 수정: 휴전 협정(temporary_ceasefire) 중에는 일반 이동 캡처뿐 아니라 스킬/증강에
+        // 의한 캡처도 전부 금지되어야 하는데, 처형자의 표식은 ChessRules의 이동 생성/필터링을 거치지
+        // 않고 PieceCapture.CapturePieceAt을 직접 호출해 처치하므로 휴전 협정 필터를 그대로 피해갔다.
+        // 휴전 협정 중에는 처형 자체(및 그에 따른 쿨타임 증가분)를 적용하지 않는다.
+        bool ceasefireActive = GameManager.Instance != null && GameManager.Instance.armisticeTurns > 0;
+        bool executes = HasAugment(knight.team, "knight_execution") && !ceasefireActive;
 
         // 쿨타임을 먼저 확정해야, 처형으로 인한 처치 시 쿨타임 감소류 증강(사냥꾼의 본능 등)이
         // 방금 세팅된 값을 기준으로 정상적으로 차감된다.
@@ -70,7 +75,10 @@ public partial class PieceSkillManager
     // 유니크2(연속 워프) 보유 시 1턴에 2회까지 사용 가능(두 번째 사용 시 쿨타임 +2턴)
     public bool TryUseWarp(ChessPieces bishop, Vector2Int targetPos, ChessBoard board)
     {
-        if (bishop == null || board == null || IsOnCooldown(bishop)) return false;
+        // 2026-10-05 수정: 위협(이동 불가) 상태인 기물은 일반 이동뿐 아니라 어떤 스킬/증강으로도
+        // 움직일 수 없어야 하는데, 워프는 PieceMovement를 거치지 않고 비숍을 직접 좌표 이동시키므로
+        // IsImmobilized 검사가 빠져 있었다. 비숍 자신이 위협 상태면 워프 자체를 거부한다.
+        if (bishop == null || board == null || IsOnCooldown(bishop) || IsImmobilized(bishop)) return false;
 
         // 상하좌우 1칸 검사
         int dx = Mathf.Abs(targetPos.x - bishop.currentX);
@@ -80,15 +88,31 @@ public partial class PieceSkillManager
         int team = bishop.team;
         ChessPieces occupant = board.GetPieceAt(targetPos.x, targetPos.y);
 
+        // 2026-10-05 수정: 차원 암살(워프로 적 처치)도 휴전 협정 중에는 금지되어야 한다 (TryUseThreat의
+        // 처형자의 표식과 동일한 이유 - PieceCapture.CapturePieceAt을 직접 호출해 휴전 협정 필터를 피해간다).
+        bool ceasefireActive = GameManager.Instance != null && GameManager.Instance.armisticeTurns > 0;
+
         bool allowSwap = occupant != null && occupant.team == team && HasAugment(team, "bishop_warp_swap");
-        bool allowAttack = occupant != null && occupant.team != team && HasAugment(team, "bishop_warp_attack");
+        bool allowAttack = occupant != null && occupant.team != team && HasAugment(team, "bishop_warp_attack") && !ceasefireActive;
 
         if (occupant != null && !allowSwap && !allowAttack)
+        {
+            if (occupant.team != team && ceasefireActive && HasAugment(team, "bishop_warp_attack"))
+                Debug.Log("휴전 협정 중에는 차원 암살로 적을 처치할 수 없습니다.");
             return false; // 증강 없이는 점유된 칸으로 워프 불가
+        }
 
         if (allowAttack && IsShielded(occupant))
         {
             Debug.Log("대상 기물은 쉴드 상태여서 차원 암살로 처치할 수 없습니다.");
+            return false;
+        }
+
+        // 2026-10-05 수정: 워프 스왑 대상 아군이 위협 상태면 그 아군 역시 어떤 방식으로도 옮겨질 수
+        // 없어야 하므로, 스왑으로 그 기물을 움직이는 것도 차단한다.
+        if (allowSwap && IsImmobilized(occupant))
+        {
+            Debug.Log("대상 기물은 위협 상태여서 워프 스왑으로 이동시킬 수 없습니다.");
             return false;
         }
 
@@ -265,9 +289,14 @@ public partial class PieceSkillManager
         cooldowns[king] = kingCommandCooldownBase[king.team];
 
         // 지휘 VFX: 대상 머리 위에 노란 이펙트를 부여(예약 표시), 실제 2회 이동이 끝날 때까지 유지
+        // 2026-10-05 수정(멀티플레이 버그): 기존에는 GetHeadLocalOffset(기물 렌더러 전체 높이 기반 동적
+        // 오프셋)을 사용해, 나이트 기준 약 2.33, 킹 기준 약 3.5 유닛이나 되는 큰 높이로 VFX가 스폰됐다.
+        // 같은 0.15 스케일을 쓰는 위협/쉴드 VFX는 둘 다 고정된 Vector3.up * 0.1f 오프셋을 써서 문제없이
+        // 보이므로, 지휘 VFX만 유독 "기존보다 크고 높이 떠서 보이는" 원인은 스케일이 아니라 이 오프셋이었다.
+        // 다른 세 스킬과 동일한 고정 오프셋으로 맞춰 피규어 머리 바로 위에 보이도록 수정한다.
         if (commandVfxInstanceByTeam.TryGetValue(king.team, out GameObject existingCommandVfx) && existingCommandVfx != null)
             Destroy(existingCommandVfx);
-        commandVfxInstanceByTeam[king.team] = SpawnPieceVfx(commandVfxPrefab, target, GetHeadLocalOffset(target));
+        commandVfxInstanceByTeam[king.team] = SpawnPieceVfx(commandVfxPrefab, target, Vector3.up * 0.1f);
 
         SoundManager.Instance?.PlayCommand();
         NotifySkillUsed(king.team);

@@ -250,18 +250,6 @@ public partial class PieceSkillManager : MonoBehaviour
         }
     }
 
-    // 기물의 렌더러 범위를 기준으로 "머리 위" 로컬 오프셋을 계산 (지휘 VFX 배치용)
-    private Vector3 GetHeadLocalOffset(ChessPieces piece)
-    {
-        Renderer[] renderers = piece.GetComponentsInChildren<Renderer>();
-        if (renderers.Length == 0) return new Vector3(0f, 1.2f, 0f);
-
-        Bounds bounds = renderers[0].bounds;
-        for (int i = 1; i < renderers.Length; i++) bounds.Encapsulate(renderers[i].bounds);
-
-        float localHeight = bounds.max.y - piece.transform.position.y;
-        return new Vector3(0f, localHeight + 0.2f, 0f);
-    }
     #endregion
 
     #region 매치 리셋

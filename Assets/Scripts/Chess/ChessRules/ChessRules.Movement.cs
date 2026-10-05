@@ -171,7 +171,11 @@ public static partial class ChessRules
                 {
                     ChessPieces targetPiece = board[targetX, targetY];
                     // 인접 칸에 아군 기물이 있는 경우 이동 후보로 추가 (위치 교환용)
-                    if (targetPiece != null && targetPiece.team == piece.team)
+                    // 2026-10-05 수정: 교환 대상 아군이 위협(이동 불가) 상태이면 그 기물은 어떤 방식으로도
+                    // 옮겨질 수 없어야 하므로, 긴급 교체의 교환 후보에서도 제외한다.
+                    bool targetImmobilized = PieceSkillManager.Instance != null
+                        && PieceSkillManager.Instance.IsImmobilized(targetPiece);
+                    if (targetPiece != null && targetPiece.team == piece.team && !targetImmobilized)
                     {
                         moves.Add(new Vector2Int(targetX, targetY));
                     }
@@ -337,7 +341,10 @@ public static partial class ChessRules
 
     #region 휴전 협정 로직
     // 노말14 [휴전 협정]: 6턴간 서로 캡처 불가능
-    public static List<Vector2Int> FilterArmisticeMoves(ChessPieces[,] board, ChessPieces piece, List<Vector2Int> rawMoves, int armisticeTurns)
+    // 2026-10-05 수정: 앙파상 캡처는 도착 칸(move) 자체가 비어 있어(실제로 잡히는 폰은 옆 칸에 있음)
+    // 기존의 "도착 칸에 적이 있으면 제거" 판정을 통과해버렸다. enPassantTarget과 일치하는 수는
+    // 폰의 캡처 수로 간주해 별도로도 제거한다.
+    public static List<Vector2Int> FilterArmisticeMoves(ChessPieces[,] board, ChessPieces piece, List<Vector2Int> rawMoves, int armisticeTurns, Vector2Int? enPassantTarget = null)
     {
         if (armisticeTurns <= 0)
             return rawMoves;
@@ -347,8 +354,10 @@ public static partial class ChessRules
         foreach (Vector2Int move in rawMoves)
         {
             ChessPieces target = board[move.x, move.y];
-            // 이동 타깃 칸이 빈 칸인 경우에만 승인 (적 기물이 존재하는 칸 제거)
-            if (target == null)
+            bool isEnPassantCapture = enPassantTarget.HasValue && move == enPassantTarget.Value && IsPawn(piece);
+
+            // 이동 타깃 칸이 빈 칸이고, 앙파상 캡처도 아닌 경우에만 승인
+            if (target == null && !isEnPassantCapture)
             {
                 validMoves.Add(move);
             }

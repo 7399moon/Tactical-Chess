@@ -97,9 +97,18 @@ public partial class SkillUIManager
         List<Vector2Int> validWarpTiles = new List<Vector2Int>();
         if (bishop == null || board == null) return validWarpTiles;
 
+        // 2026-10-05 수정: 위협(이동 불가) 상태인 비숍은 PieceSkillManager.TryUseWarp에서 이제 워프
+        // 자체를 거부하므로, 하이라이트도 애초에 아무 칸도 보여주지 않아야 플레이어가 혼란스럽지 않다.
+        if (PieceSkillManager.Instance != null && PieceSkillManager.Instance.IsImmobilized(bishop))
+            return validWarpTiles;
+
+        bool ceasefireActive = GameManager.Instance != null && GameManager.Instance.armisticeTurns > 0;
+
         // 레어4(워프 스왑)/레전더리2(차원 암살) 보유 시 아군/적이 있는 칸도 워프 후보로 노출
         bool canSwap = AugmentManager.Instance != null && AugmentManager.Instance.HasAugment(bishop.team, "bishop_warp_swap");
-        bool canAttack = AugmentManager.Instance != null && AugmentManager.Instance.HasAugment(bishop.team, "bishop_warp_attack");
+        // 2026-10-05 수정: 차원 암살도 휴전 협정 중에는 TryUseWarp에서 거부되므로, 그 상태에서는
+        // 적이 있는 칸을 워프 후보로 노출하지 않는다.
+        bool canAttack = AugmentManager.Instance != null && AugmentManager.Instance.HasAugment(bishop.team, "bishop_warp_attack") && !ceasefireActive;
 
         for (int i = 0; i < WarpDirections.Length; i++)
         {
@@ -110,7 +119,9 @@ public partial class SkillUIManager
                 continue;
 
             ChessPieces occupant = board.GetPieceAt(targetX, targetY);
-            bool isSwapCase = occupant != null && occupant.team == bishop.team && canSwap;
+            // 2026-10-05 수정: 스왑 대상 아군이 위협 상태면 TryUseWarp에서 거부되므로 후보에서도 제외.
+            bool occupantImmobilized = PieceSkillManager.Instance != null && PieceSkillManager.Instance.IsImmobilized(occupant);
+            bool isSwapCase = occupant != null && occupant.team == bishop.team && canSwap && !occupantImmobilized;
             bool isAttackCase = occupant != null && occupant.team != bishop.team && canAttack;
             bool valid = occupant == null || isSwapCase || isAttackCase;
 

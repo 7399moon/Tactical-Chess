@@ -67,8 +67,11 @@ public static partial class ChessRules
                 legal.Add(move);
         }
 
+        // 2026-10-05 수정: 앙파상 캡처는 도착 칸이 빈 칸이라 기존 FilterArmisticeMoves의
+        // "도착 칸에 적이 있는 수만 제거" 판정을 피해가 휴전 협정 중에도 캡처가 가능했다.
+        // enPassantTarget을 함께 넘겨 그 좌표로 가는 수도 캡처 수로 식별해 제거한다.
         int armisticeTurns = GameManager.Instance != null ? GameManager.Instance.armisticeTurns : 0;
-        legal = FilterArmisticeMoves(board, piece, legal, armisticeTurns);
+        legal = FilterArmisticeMoves(board, piece, legal, armisticeTurns, enPassantTarget);
 
         return legal;
     }
