@@ -18,6 +18,12 @@ public class SettingsPanelUI : MonoBehaviour
     [SerializeField] private GameObject panel;    // 패널 전체(배경 차단막 포함)
     [SerializeField] private Button closeButton;
 
+    // 2026-10-05 추가: 게임 씬/로비 씬 환경설정에만 쓰이는 "게임 나가기" 버튼(스타트 씬으로 복귀).
+    // 시작 씬의 SettingsCanvas 인스턴스에서는 이 필드를 비워두거나 버튼 오브젝트를 비활성화해
+    // 두면 되므로, 코드에서는 null 가능성을 항상 방어적으로 처리한다(시작 씬에는 나갈 "게임"이
+    // 없으므로 애초에 노출하지 않는다).
+    [SerializeField] private Button exitGameButton;
+
     [Header("음량")]
     [SerializeField] private Slider volumeSlider;
     [SerializeField] private Text volumeValueText;
@@ -47,6 +53,10 @@ public class SettingsPanelUI : MonoBehaviour
     {
         if (openButton != null) openButton.onClick.AddListener(TogglePanel);
         if (closeButton != null) closeButton.onClick.AddListener(ClosePanel);
+        // 2026-10-05 추가: "게임 나가기" - 현재 진행 중인 네트워크 세션을 정리하고 스타트 씬으로
+        // 돌아간다. 게임오버 화면의 "타이틀로 이동" 버튼(GameOverUI)/로비의 "나가기" 버튼
+        // (LobbyController)과 동일하게 BasicSpawner.GoToTitle()을 그대로 재사용한다.
+        if (exitGameButton != null) exitGameButton.onClick.AddListener(OnExitGameClicked);
         if (windowedButton != null) windowedButton.onClick.AddListener(() => SettingsManager.Instance?.SetFullScreen(false));
         if (fullScreenButton != null) fullScreenButton.onClick.AddListener(() => SettingsManager.Instance?.SetFullScreen(true));
 
@@ -145,6 +155,12 @@ public class SettingsPanelUI : MonoBehaviour
     {
         Vector2Int option = SettingsManager.ResolutionOptions[index];
         SettingsManager.Instance?.SetResolution(option.x, option.y);
+    }
+
+    // "게임 나가기": 세션을 종료하고 스타트 씬으로 돌아간다 (시작 씬 자체에는 이 버튼이 없다).
+    private void OnExitGameClicked()
+    {
+        BasicSpawner.Instance?.GoToTitle();
     }
     #endregion
 

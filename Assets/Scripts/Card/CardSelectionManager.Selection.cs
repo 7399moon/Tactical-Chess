@@ -253,7 +253,20 @@ public partial class CardSelectionManager
             && ChessInteractionManager.Instance.IsTeamAwaitingPromotionTarget(team);
 
         if (awaitingBoardTarget)
+        {
             teamsAwaitingBoardTarget.Add(team);
+
+            // 2026-10-05 수정: 네트워크 대전 모드에서 즉시 승급 계열 증강을 고르면 "승급시킬 아군
+            // 기물 클릭하세요"만 콘솔에 뜨고 보드 클릭이 전혀 먹히지 않는 버그가 있었다. 로컬
+            // 테스트 모드는 ApplyAugmentChoice 맨 앞에서 패널을 이미 닫고 들어가서 문제가 없었지만,
+            // 네트워크 모드는 패널을 닫는 시점이 HandleAugmentTeamDone(=체크포인트가 완전히 끝났을
+            // 때)뿐이라, 보드 타겟 대기 중에도 카드 선택 패널이 화면을 계속 덮어 보드 클릭을 막고
+            // 있었다. 이 선택에 실제로 관여한 클라이언트에서만 지금 패널을 닫아(타이머는 재개하지
+            // 않음 - 시간제한이 있다면 그대로 정지 상태 유지) 보드를 클릭 가능하게 만든다.
+            // 실제 체크포인트 완료 처리는 HandlePromotionTargetResolved가 보드 클릭을 받은 뒤 이어서 한다.
+            if (IsInteractiveForTeam(team))
+                FinalizeCardSelectionUI(wasPromotion: false, resumeTimer: false);
+        }
 
         if (awaitingPieceChoice || awaitingBoardTarget)
             return; // 이진 선택 또는 보드 타겟 클릭이 아직 남아있음 - 여기서는 완료 처리를 하지 않는다.

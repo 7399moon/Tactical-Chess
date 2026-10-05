@@ -56,7 +56,11 @@ public partial class SkillUIManager : MonoBehaviour
     public ChessPieces MovedPieceThisTurn { get; private set; } = null;
     public bool IsWarpPendingMove { get; private set; } = false;     // 워프 직후 정규 이동 대기 상태
     public ChessPieces WarpBishopPiece { get; private set; } = null;
-    public bool IsKingDoubleMoveActive { get; set; } = false;
+    public bool IsKingDoubleMoveActive { get; private set; } = false;
+    // 2026-10-05 추가: "왕의 보폭" 보너스 이동 대기 중에 어떤 킹이 그 보너스를 받았는지 추적한다.
+    // 예전에는 bool 플래그만 있어서, 보너스가 대기 중일 때 킹이 아닌 다른 아무 기물이나 그
+    // 이동으로 보너스를 소모(가로채기)할 수 있었다 - 이제 반드시 이 킹 자신만 소모할 수 있다.
+    public ChessPieces KingDoubleMovePiece { get; private set; } = null;
     #endregion
 
     #region 내부 상태 필드

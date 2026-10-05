@@ -66,6 +66,9 @@ public partial class SkillUIManager
         if (kingButton)
             kingButton.interactable = !HasUsedSkillThisTurn && !HasMovedThisTurn && !PieceSkillManager.Instance.IsOnCooldown(king);
 
+        // 2026-10-05 수정 후 되돌림: 턴 종료 버튼은 "이번 턴엔 1회만 이동하고 전략적으로 넘긴다"는
+        // 의도된 선택지라는 사용자 확인에 따라, 왕의 보폭/지휘 강제 이동 여부와 무관하게
+        // HasMovedThisTurn 조건만으로 원래 동작으로 되돌린다.
         if (endTurnButton)
             endTurnButton.interactable = HasMovedThisTurn;
 

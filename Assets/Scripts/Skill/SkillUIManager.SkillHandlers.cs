@@ -228,5 +228,22 @@ public partial class SkillUIManager
         WarpBishopPiece = bishop;
         RefreshUIState();
     }
+
+    // 2026-10-05 추가: "왕의 보폭" 보너스 이동을 킹이 이번 턴 처음 움직였을 때 부여(예약)한다.
+    // 이 보너스는 반드시 같은 킹이 소모해야 하므로 대상 기물 참조(KingDoubleMovePiece)도 함께 기록한다.
+    public void SetKingDoubleMovePending(ChessPieces king)
+    {
+        IsKingDoubleMoveActive = true;
+        KingDoubleMovePiece = king;
+    }
+
+    // 왕의 보폭 보너스 이동 소모/취소 처리 (실제 소모는 그 킹이 다시 움직였을 때만 일어나야 한다 -
+    // ChessInteractionManager.ProcessKingDoubleMove가 호출 전에 이미 피호출 기물이 KingDoubleMovePiece와
+    // 같은지 검증한다)
+    public void ClearKingDoubleMove()
+    {
+        IsKingDoubleMoveActive = false;
+        KingDoubleMovePiece = null;
+    }
     #endregion
 }

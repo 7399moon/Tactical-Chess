@@ -178,7 +178,19 @@ public partial class ChessInteractionManager : MonoBehaviour
         }
 
         if (piece.team == actingTeam && SkillUIManager.Instance != null && SkillUIManager.Instance.HasMovedThisTurn)
-            return false;
+        {
+            // 2026-10-05 수정: 왕의 보폭 보너스 이동 대기 중인 킹, 또는 지휘로 2회 이동이 보장된 기물은
+            // "이번 턴에 이미 움직였다"는 이유로 재선택이 막혀서는 안 된다 - 그렇지 않으면 왕의 보폭/지휘가
+            // 안내만 뜨고 실제로는 절대 발동할 수 없는 죽은 기능이 된다(해당 기물 재선택이 전면 차단되므로).
+            bool isPendingKingStride = SkillUIManager.Instance.IsKingDoubleMoveActive
+                && SkillUIManager.Instance.KingDoubleMovePiece == piece;
+            bool isPendingCommandMove = PieceSkillManager.Instance != null
+                && PieceSkillManager.Instance.IsCommandActiveForTeam(actingTeam)
+                && PieceSkillManager.Instance.GetCommandedPiece(actingTeam) == piece;
+
+            if (!isPendingKingStride && !isPendingCommandMove)
+                return false;
+        }
 
         return true;
     }

@@ -235,15 +235,35 @@ public class ChessBoard : MonoBehaviour
     // 해당 위치의 기물을 파괴하고 새 기물 타입으로 교체
     public void PromotePieceAt(int x, int y, ChessPieceType newType, int team)
     {
+        // 2026-10-05 수정: 승급은 기존 ChessPieces 인스턴스를 파괴하고 완전히 새 인스턴스로
+        // 교체하는 방식이라, PieceSkillManager가 인스턴스를 키로 관리하는 위협/쉴드/쿨타임/지휘
+        // 대상 상태가 전부 승급과 함께 통째로 사라졌다. 사용자 피드백에 따라:
+        //  - 위협/쉴드/지휘 대상 지정 등 "상태 효과"는 승급되어 다른 기물이 된 것이므로 그대로
+        //    사라지는 게 맞다 -> ClearPieceState로 명시적으로 즉시 정리.
+        //  - 다만 "쿨타임"(퀸의 즉위 스택 제외)은 기물의 생존 여부와 무관하게 유지되어야 한다
+        //    -> 승급 직전 남은 쿨타임을 읽어뒀다가 승급된 새 기물에 그대로 옮긴다(쿨타임이 걸린
+        //    스킬을 쓰자마자 승급해 쿨타임을 리셋하는 악용도 함께 방지된다).
+        int carriedCooldown = 0;
         if (chessPieces[x, y] != null)
         {
-            Destroy(chessPieces[x, y].gameObject);
+            ChessPieces oldPiece = chessPieces[x, y];
+
+            if (PieceSkillManager.Instance != null)
+            {
+                carriedCooldown = PieceSkillManager.Instance.GetCooldownRemaining(oldPiece);
+                PieceSkillManager.Instance.ClearPieceState(oldPiece, team);
+            }
+
+            Destroy(oldPiece.gameObject);
             chessPieces[x, y] = null;
         }
 
         ChessPieces newPiece = SpawnSinglePiece(newType, team);
         chessPieces[x, y] = newPiece;
         PositionSinglePiece(x, y);
+
+        if (carriedCooldown > 0 && PieceSkillManager.Instance != null)
+            PieceSkillManager.Instance.SetCooldownDirectly(newPiece, carriedCooldown);
 
         SoundManager.Instance?.PlayPromotion();
 

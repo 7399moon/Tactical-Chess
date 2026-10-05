@@ -16,13 +16,6 @@ public partial class PieceSkillManager
     // 쿨타임이 남아있는지 여부
     public bool IsOnCooldown(ChessPieces piece) => GetCooldownRemaining(piece) > 0;
 
-    // 지휘로 이번 턴 추가 이동권을 받은 기물인지 확인
-    public bool HasCommandExtraMove(ChessPieces piece) =>
-        piece != null && commandExtraMoveThisTurn.TryGetValue(piece.team, out ChessPieces target) && target == piece;
-
-    // 추가 이동권 소모 처리
-    public void ConsumeCommandExtraMove(int team) => commandExtraMoveThisTurn.Remove(team);
-
     // 증강(사냥꾼의 본능, 워프 가속 등) 효과로 쿨타임을 즉시 감소
     public void ReduceCooldown(ChessPieces piece, int amount)
     {
@@ -49,5 +42,41 @@ public partial class PieceSkillManager
     // 해당 팀이 augmentId를 가지고 있는지 짧게 확인하기 위한 헬퍼
     private bool HasAugment(int team, string augmentId) =>
         AugmentManager.Instance != null && AugmentManager.Instance.HasAugment(team, augmentId);
+
+    // 2026-10-05 추가: 승급(프로모션)으로 기존 기물이 파괴되고 새 인스턴스로 교체될 때 호출하는 API.
+    // 사용자 피드백 반영 - 위협/쉴드/지휘 대상 지정 같은 "상태 효과"는 승급되면서 다른 기물이 된
+    // 것이므로 그대로 해제되는 게 맞지만(여기서 명시적으로 즉시 정리), "쿨타임"은 기물의 생존
+    // 여부와 무관하게 유지되어야 하므로 이 메서드에서는 건드리지 않는다(쿨타임 이전은
+    // GetCooldownRemaining/SetCooldownDirectly를 호출부(ChessBoard.PromotePieceAt)에서 직접 처리).
+    public void ClearPieceState(ChessPieces piece, int team)
+    {
+        if (piece == null) return;
+
+        if (immobilized.Remove(piece))
+        {
+            piece.IsThreatenedTarget = false;
+            RemoveThreatVfx(piece);
+        }
+
+        if (shielded.Remove(piece))
+            RemoveShieldVfx(piece);
+
+        if (pendingCommandTarget.TryGetValue(team, out ChessPieces pendingTarget) && pendingTarget == piece)
+            pendingCommandTarget.Remove(team);
+
+        if (commandedPieceByTeam.TryGetValue(team, out ChessPieces activeTarget) && activeTarget == piece)
+            ClearCommandState(team);
+    }
+
+    // 2026-10-05 추가: 승급된 새 기물에 승급 전 기물의 남은 쿨타임을 그대로 옮겨 적용하기 위한 API
+    // (쿨타임이 걸린 스킬을 쓰자마자 승급해서 쿨타임을 리셋하는 악용을 막기 위함이기도 하다).
+    // value가 0 이하이면 쿨타임이 없는 상태이므로 딕셔너리 항목 자체를 남기지 않는다.
+    public void SetCooldownDirectly(ChessPieces piece, int value)
+    {
+        if (piece == null) return;
+
+        if (value > 0) cooldowns[piece] = value;
+        else cooldowns.Remove(piece);
+    }
     #endregion
 }

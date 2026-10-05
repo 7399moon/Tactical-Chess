@@ -1,0 +1,1621 @@
+fileFormatVersion: 2
+guid: ed6b81aadfbf3bf4ebf5e9d951d1795f
+TextureImporter:
+  internalIDToNameTable: []
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 1
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 0
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 2
+  spriteExtrude: 1
+  spriteMeshType: 1
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 100
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 1
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationDetail: -1
+  textureType: 8
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 4
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Android
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: WebGL
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: UNO_Back
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 896
+        width: 82
+        height: 128
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: b2b0258fadc4d244299f5d0ff7a31e0b
+      internalID: 980382072
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: UNO_Wild
+      rect:
+        serializedVersion: 2
+        x: 84
+        y: 896
+        width: 82
+        height: 128
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: ddf519fd615b0fe4faba175f6c5f91f3
+      internalID: 217201050
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: UNO_Wild_Yellow
+      rect:
+        serializedVersion: 2
+        x: 168
+        y: 896
+        width: 82
+        height: 128
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 781151ab2eace5a44a2b0abf789045f5
+      internalID: -20419254
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: UNO_Wild_Red
+      rect:
+        serializedVersion: 2
+        x: 251
+        y: 896
+        width: 83
+        height: 128
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: fe2977a641335c349827e25834591761
+      internalID: -1557571815
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: UNO_Wild_Blue
+      rect:
+        serializedVersion: 2
+        x: 335
+        y: 896
+        width: 82
+        height: 128
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 9f1ac78944f146c45a77fcd5d3634cba
+      internalID: 690832661
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: UNO_Wild_Green
+      rect:
+        serializedVersion: 2
+        x: 419
+        y: 896
+        width: 82
+        height: 128
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 7b1e9015d726b6445b1f17edc8242b96
+      internalID: 163955203
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: UNO_Wild_Draw4
+      rect:
+        serializedVersion: 2
+        x: 503
+        y: 896
+        width: 82
+        height: 128
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 5974f448c4cee1e4494be91f96589194
+      internalID: 1474982688
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: UNO_Wild_Draw4_Yellow
+      rect:
+        serializedVersion: 2
+        x: 588
+        y: 896
+        width: 82
+        height: 128
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 1c29c5e1e1b27914182c4dc1a00d9bdd
+      internalID: 189347764
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: UNO_Wild_Draw4_Red
+      rect:
+        serializedVersion: 2
+        x: 671
+        y: 896
+        width: 83
+        height: 128
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 95c0d0b827427214695023f0afb689b3
+      internalID: -1002046461
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: UNO_Wild_Draw4_Blue
+      rect:
+        serializedVersion: 2
+        x: 755
+        y: 896
+        width: 82
+        height: 128
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 0bd2d30fde7ca864baa6d32f58d5f83b
+      internalID: -2136593745
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: UNO_Wild_Draw4_Green
+      rect:
+        serializedVersion: 2
+        x: 839
+        y: 896
+        width: 82
+        height: 128
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: f83a4f24400097d46858060a36542906
+      internalID: -1939009382
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: UNO_Blank
+      rect:
+        serializedVersion: 2
+        x: 923
+        y: 896
+        width: 82
+        height: 128
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 59651136fa8a8d542a1d8f502bf8f802
+      internalID: 903996294
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: UNO_Yellow_1
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 767
+        width: 82
+        height: 127
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: a5fa86ffcdbc91c45939e5d1cae26290
+      internalID: 1066825003
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: UNO_Yellow_2
+      rect:
+        serializedVersion: 2
+        x: 84
+        y: 767
+        width: 82
+        height: 127
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 2c1bef0481fbb4042b58b7a74e1f890d
+      internalID: -771271252
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: UNO_Yellow_3
+      rect:
+        serializedVersion: 2
+        x: 168
+        y: 767
+        width: 82
+        height: 127
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: a348c0ccddbab5e428ca8f82ded4e5b6
+      internalID: 35759488
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: UNO_Yellow_4
+      rect:
+        serializedVersion: 2
+        x: 251
+        y: 767
+        width: 83
+        height: 127
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 37bfea726c21dad429bc3576fa0eaba5
+      internalID: 441931308
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: UNO_Yellow_5
+      rect:
+        serializedVersion: 2
+        x: 335
+        y: 767
+        width: 82
+        height: 127
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 98ca8b3a77c27a146b60f25890f9f16c
+      internalID: -1850548043
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: UNO_Yellow_6
+      rect:
+        serializedVersion: 2
+        x: 419
+        y: 767
+        width: 82
+        height: 127
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 5f8b722ce5c416d4595087a715f2e926
+      internalID: 932271919
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: UNO_Yellow_7
+      rect:
+        serializedVersion: 2
+        x: 503
+        y: 767
+        width: 82
+        height: 127
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: f5bd63f3ad00b8446931276acb507a2d
+      internalID: 1388498107
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: UNO_Yellow_8
+      rect:
+        serializedVersion: 2
+        x: 588
+        y: 767
+        width: 82
+        height: 127
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: f9c6867caf698054ab7f964b040f205e
+      internalID: -1440741021
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: UNO_Yellow_9
+      rect:
+        serializedVersion: 2
+        x: 671
+        y: 767
+        width: 83
+        height: 127
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 4ad17d36922d1e545b69954aefb65d71
+      internalID: -886005630
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: UNO_Yellow_0
+      rect:
+        serializedVersion: 2
+        x: 755
+        y: 767
+        width: 82
+        height: 127
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: d040902ed92b74540b8f6beaf5d24477
+      internalID: -369176613
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: UNO_Yellow_Draw2
+      rect:
+        serializedVersion: 2
+        x: 839
+        y: 767
+        width: 82
+        height: 127
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 6c1c264eea737c042a6141b501eb6816
+      internalID: 1539482762
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: UNO_Yellow_Skip
+      rect:
+        serializedVersion: 2
+        x: 923
+        y: 767
+        width: 82
+        height: 127
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: e2410c63bda69084abf387418d8b6803
+      internalID: -1824633425
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: UNO_Yellow_Reverse
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 638
+        width: 82
+        height: 127
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 395edc5604d9e3b488af56f744a2d3bf
+      internalID: 1353847715
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: UNO_Red_1
+      rect:
+        serializedVersion: 2
+        x: 84
+        y: 638
+        width: 82
+        height: 127
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: aaefd5fe761dfb24b87076c6ac3f8f24
+      internalID: -1430523320
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: UNO_Red_2
+      rect:
+        serializedVersion: 2
+        x: 168
+        y: 638
+        width: 82
+        height: 127
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: f4a2d0cafb063ff44b18dee631a8a7f3
+      internalID: -397922485
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: UNO_Red_3
+      rect:
+        serializedVersion: 2
+        x: 251
+        y: 638
+        width: 83
+        height: 127
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 5950596a9ca53d24b81bb35811d66c94
+      internalID: -510973370
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: UNO_Red_4
+      rect:
+        serializedVersion: 2
+        x: 335
+        y: 638
+        width: 82
+        height: 127
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 97ce158a7df5ac44896f85329fc71786
+      internalID: -2011903533
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: UNO_Red_5
+      rect:
+        serializedVersion: 2
+        x: 419
+        y: 638
+        width: 82
+        height: 127
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: eca88ca63d16868419ede02ddcd74282
+      internalID: 557320061
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: UNO_Red_6
+      rect:
+        serializedVersion: 2
+        x: 503
+        y: 638
+        width: 82
+        height: 127
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 7213c26a0520f5046b50b4f99893de0a
+      internalID: -483122356
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: UNO_Red_7
+      rect:
+        serializedVersion: 2
+        x: 588
+        y: 638
+        width: 82
+        height: 127
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 41bc05eec804d33469fde8f1201a5817
+      internalID: -203296924
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: UNO_Red_8
+      rect:
+        serializedVersion: 2
+        x: 671
+        y: 638
+        width: 83
+        height: 127
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 423cb00dc7ef0dc4381ea5a5971eef34
+      internalID: -695913610
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: UNO_Red_9
+      rect:
+        serializedVersion: 2
+        x: 755
+        y: 638
+        width: 82
+        height: 127
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: d96cfe21dd55b664c99a5f027689d790
+      internalID: -983417521
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: UNO_Red_0
+      rect:
+        serializedVersion: 2
+        x: 839
+        y: 638
+        width: 82
+        height: 127
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 48d4d8c0ea1c71746b03b8ba2c8fa3b6
+      internalID: -947841706
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: UNO_Red_Draw2
+      rect:
+        serializedVersion: 2
+        x: 923
+        y: 638
+        width: 82
+        height: 127
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: e43173f132b0ba84097c2e720366ec84
+      internalID: 1108907645
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: UNO_Red_Skip
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 509
+        width: 82
+        height: 127
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 4598e33a2a093a34aa3fd75fe4f6951c
+      internalID: -2058064518
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: UNO_Red_Reverse
+      rect:
+        serializedVersion: 2
+        x: 84
+        y: 509
+        width: 82
+        height: 127
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: f52e4b5e3c3bc2a4094351a73fb5bf8e
+      internalID: 408812851
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: UNO_Blue_1
+      rect:
+        serializedVersion: 2
+        x: 168
+        y: 509
+        width: 82
+        height: 127
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 58e5bd6a1ac6df749a0a571d7f81c4a5
+      internalID: 843445826
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: UNO_Blue_2
+      rect:
+        serializedVersion: 2
+        x: 251
+        y: 509
+        width: 83
+        height: 127
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 0829d52680b3cca4e8e30ee5e807acd6
+      internalID: -286457440
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: UNO_Blue_3
+      rect:
+        serializedVersion: 2
+        x: 335
+        y: 509
+        width: 82
+        height: 127
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 19c62da54f606224e83a4e76d516524e
+      internalID: 555389570
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: UNO_Blue_4
+      rect:
+        serializedVersion: 2
+        x: 419
+        y: 509
+        width: 82
+        height: 127
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 57e1d35a4b1e8a04481f8fd4ce07525f
+      internalID: -624533203
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: UNO_Blue_5
+      rect:
+        serializedVersion: 2
+        x: 503
+        y: 509
+        width: 82
+        height: 127
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: da4ce5c6168026048a86110bedc79136
+      internalID: 2143621886
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: UNO_Blue_6
+      rect:
+        serializedVersion: 2
+        x: 588
+        y: 509
+        width: 82
+        height: 127
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 3b77b8c20df66464f891368ea0bf5ec5
+      internalID: 851695246
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: UNO_Blue_7
+      rect:
+        serializedVersion: 2
+        x: 671
+        y: 509
+        width: 83
+        height: 127
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: e028699d984f332458ce4e623cf2a2c5
+      internalID: 1458757757
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: UNO_Blue_8
+      rect:
+        serializedVersion: 2
+        x: 755
+        y: 509
+        width: 82
+        height: 127
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: fb71bffea31cd034a95442893dde7447
+      internalID: 23223280
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: UNO_Blue_9
+      rect:
+        serializedVersion: 2
+        x: 839
+        y: 509
+        width: 82
+        height: 127
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: c8bf147cff2c50e4fb68becf45e6635e
+      internalID: -1690570996
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: UNO_Blue_0
+      rect:
+        serializedVersion: 2
+        x: 923
+        y: 509
+        width: 82
+        height: 127
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: a2f33192092f8f94ca6297143103f4a5
+      internalID: 518931837
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: UNO_Blue_Draw2
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 379
+        width: 82
+        height: 128
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 48476acd9438f20488a9cac9002580b3
+      internalID: 861034269
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: UNO_Blue_Skip
+      rect:
+        serializedVersion: 2
+        x: 84
+        y: 379
+        width: 82
+        height: 128
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: d2101b3476c3c5e41978522f13253026
+      internalID: -2014277590
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: UNO_Blue_Reverse
+      rect:
+        serializedVersion: 2
+        x: 168
+        y: 379
+        width: 82
+        height: 128
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 5b249dd2975bc3342ac6e109dc018344
+      internalID: 301793231
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: UNO_Green_1
+      rect:
+        serializedVersion: 2
+        x: 251
+        y: 379
+        width: 83
+        height: 128
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: dac884956e90fcb45baeb90f66cff69c
+      internalID: -621488712
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: UNO_Green_2
+      rect:
+        serializedVersion: 2
+        x: 335
+        y: 379
+        width: 82
+        height: 128
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 07bcfb1ab6c0e014c856aa8e88245c33
+      internalID: 1916406271
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: UNO_Green_3
+      rect:
+        serializedVersion: 2
+        x: 419
+        y: 379
+        width: 82
+        height: 128
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 237606ae6bd229a40a542ad40b6c164b
+      internalID: -705523956
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: UNO_Green_4
+      rect:
+        serializedVersion: 2
+        x: 503
+        y: 379
+        width: 82
+        height: 128
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 38dfae9dafdf6f445b9d0cecea3a97e4
+      internalID: -1325625550
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: UNO_Green_5
+      rect:
+        serializedVersion: 2
+        x: 588
+        y: 379
+        width: 82
+        height: 128
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 35c341e4fd719e94594b756c76541c16
+      internalID: -1550893090
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: UNO_Green_6
+      rect:
+        serializedVersion: 2
+        x: 671
+        y: 379
+        width: 83
+        height: 128
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: ef826c449d7db744b8d1cef51711efd5
+      internalID: 897298857
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: UNO_Green_7
+      rect:
+        serializedVersion: 2
+        x: 755
+        y: 379
+        width: 82
+        height: 128
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 014eca9ac3638c94795345497c947793
+      internalID: -1026134488
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: UNO_Green_8
+      rect:
+        serializedVersion: 2
+        x: 839
+        y: 379
+        width: 82
+        height: 128
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 000c4e726c54fa54481cb57dfea141e2
+      internalID: 679976429
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: UNO_Green_9
+      rect:
+        serializedVersion: 2
+        x: 923
+        y: 379
+        width: 82
+        height: 128
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: d63020d02f28bb844b3c997fb38afcb3
+      internalID: -1555596364
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: UNO_Green_0
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 250
+        width: 82
+        height: 127
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: d7a5c098749e68d4dbd72c72ed7f7b3a
+      internalID: 2045608993
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: UNO_Green_Draw2
+      rect:
+        serializedVersion: 2
+        x: 84
+        y: 250
+        width: 82
+        height: 127
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 84591c116b338bf42ac1d371368e6eaf
+      internalID: 2081051831
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: UNO_Green_Skip
+      rect:
+        serializedVersion: 2
+        x: 168
+        y: 250
+        width: 82
+        height: 127
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 4a9ec0c9d58796d4fa260d2116d9cdb4
+      internalID: -1093317389
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: UNO_Green_Reverse
+      rect:
+        serializedVersion: 2
+        x: 251
+        y: 250
+        width: 83
+        height: 127
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 0db19d1052f53614dbd4e833dffd0fb6
+      internalID: -567216543
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    customData: 
+    physicsShape: []
+    bones: []
+    spriteID: 53f0d2d882512d24bb87ce152ad07caf
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    spriteCustomMetadata:
+      entries:
+      - key: SpriteEditor.SliceSettings
+        value: '{"sliceOnImport":false,"gridCellCount":{"x":12.0,"y":8.0},"gridSpriteSize":{"x":83.0,"y":129.0},"gridSpriteOffset":{"x":0.0,"y":0.0},"gridSpritePadding":{"x":1.0,"y":0.0},"pivot":{"x":0.5,"y":0.5},"pivotPixels":{"x":0.0,"y":0.0},"autoSlicingMethod":0,"spriteAlignment":0,"pivotUnitMode":0,"slicingType":1,"keepEmptyRects":false,"isAlternate":false}'
+    nameFileIdTable:
+      UNO_Back: 980382072
+      UNO_Wild: 217201050
+      UNO_Wild_Draw4_Green: -1939009382
+      UNO_Blank: 903996294
+      UNO_Yellow_1: 1066825003
+      UNO_Yellow_2: -771271252
+      UNO_Yellow_3: 35759488
+      UNO_Yellow_4: 441931308
+      UNO_Yellow_5: -1850548043
+      UNO_Yellow_6: 932271919
+      UNO_Yellow_7: 1388498107
+      UNO_Yellow_8: -1440741021
+      UNO_Wild_Yellow: -20419254
+      UNO_Yellow_9: -886005630
+      UNO_Yellow_0: -369176613
+      UNO_Yellow_Draw2: 1539482762
+      UNO_Yellow_Skip: -1824633425
+      UNO_Yellow_Reverse: 1353847715
+      UNO_Red_1: -1430523320
+      UNO_Red_2: -397922485
+      UNO_Red_3: -510973370
+      UNO_Red_4: -2011903533
+      UNO_Red_5: 557320061
+      UNO_Wild_Red: -1557571815
+      UNO_Red_6: -483122356
+      UNO_Red_7: -203296924
+      UNO_Red_8: -695913610
+      UNO_Red_9: -983417521
+      UNO_Red_0: -947841706
+      UNO_Red_Draw2: 1108907645
+      UNO_Red_Skip: -2058064518
+      UNO_Red_Reverse: 408812851
+      UNO_Blue_1: 843445826
+      UNO_Blue_2: -286457440
+      UNO_Wild_Blue: 690832661
+      UNO_Blue_3: 555389570
+      UNO_Blue_4: -624533203
+      UNO_Blue_5: 2143621886
+      UNO_Blue_6: 851695246
+      UNO_Blue_7: 1458757757
+      UNO_Blue_8: 23223280
+      UNO_Blue_9: -1690570996
+      UNO_Blue_0: 518931837
+      UNO_Blue_Draw2: 861034269
+      UNO_Blue_Skip: -2014277590
+      UNO_Wild_Green: 163955203
+      UNO_Blue_Reverse: 301793231
+      UNO_Green_1: -621488712
+      UNO_Green_2: 1916406271
+      UNO_Green_3: -705523956
+      UNO_Green_4: -1325625550
+      UNO_Green_5: -1550893090
+      UNO_Green_6: 897298857
+      UNO_Green_7: -1026134488
+      UNO_Green_8: 679976429
+      UNO_Green_9: -1555596364
+      UNO_Wild_Draw4: 1474982688
+      UNO_Green_0: 2045608993
+      UNO_Green_Draw2: 2081051831
+      UNO_Green_Skip: -1093317389
+      UNO_Green_Reverse: -567216543
+      PC _ Computer - UNO - Cards - Cards (Classic)_64: 1631977389
+      PC _ Computer - UNO - Cards - Cards (Classic)_65: 1631776743
+      PC _ Computer - UNO - Cards - Cards (Classic)_66: -1350422676
+      PC _ Computer - UNO - Cards - Cards (Classic)_67: -298420823
+      UNO_Wild_Draw4_Yellow: 189347764
+      UNO_Wild_Draw4_Red: -1002046461
+      UNO_Wild_Draw4_Blue: -2136593745
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

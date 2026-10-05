@@ -151,7 +151,9 @@ public partial class ChessInteractionManager
                         break;
 
                     case PendingSkillType.Queen:
-                        if (clickedPiece != null && QueenSkill.Instance != null && QueenSkill.Instance.TryPromoteTarget(clickedPiece))
+                        // 2026-10-05 수정: 아군 기물만 승급 대상으로 선택 가능하도록 actingTeam 검증 추가
+                        // (자세한 이유는 QueenSkill.TryPromoteTarget 주석 참고)
+                        if (clickedPiece != null && QueenSkill.Instance != null && QueenSkill.Instance.TryPromoteTarget(clickedPiece, actingTeam))
                         {
                             Debug.Log("[Skill] 퀸 아우라 승급 성공");
                             skillSuccess = true;
@@ -208,6 +210,17 @@ public partial class ChessInteractionManager
             else if (pieceMovement != null)
             {
                 ChessPieces movedPiece = SelectedPiece;
+
+                // 2026-10-05 수정: "왕의 보폭" 보너스 이동이 대기 중일 때는 그 킹 기물만 이동할 수
+                // 있어야 하는데, 예전에는 아무 기물이나 이동하면 그 보너스를 가로채 소모해버리는
+                // 버그가 있었다. 여기서 먼저 막아 아예 다른 기물의 이동 자체가 진행되지 않게 한다.
+                if (SkillUIManager.Instance != null && SkillUIManager.Instance.IsKingDoubleMoveActive
+                    && SkillUIManager.Instance.KingDoubleMovePiece != movedPiece)
+                {
+                    CenterAnnouncer.Show("왕의 보폭 효과가 활성화된 동안에는 킹만 이동할 수 있습니다.");
+                    DeselectPiece();
+                    return;
+                }
 
                 // 1. 이동 횟수 증가 및 왕의 보폭(노말3) 처리
                 movedPiece.moveCountThisTurn++;
@@ -266,10 +279,12 @@ public partial class ChessInteractionManager
     {
         if (SkillUIManager.Instance == null) return;
 
-        // 이미 보너스 이동 상태였다면 이번 이동으로 소모 완료 (킹이든 아니든 상관없이)
+        // 2026-10-05 수정: 호출 시점에는 이미 HandleClick에서 "보너스 대기 중이면 그 킹만 이동
+        // 가능"함을 검증하고 들어온 상태이므로, 여기서 IsKingDoubleMoveActive가 true라면
+        // movedPiece는 반드시 KingDoubleMovePiece와 같은 킹이다 - 안전하게 소모 처리한다.
         if (SkillUIManager.Instance.IsKingDoubleMoveActive)
         {
-            SkillUIManager.Instance.IsKingDoubleMoveActive = false;
+            SkillUIManager.Instance.ClearKingDoubleMove();
             return;
         }
 
@@ -284,7 +299,7 @@ public partial class ChessInteractionManager
         {
             Debug.Log("[왕의 보폭] 추가 이동 1회 가능! 턴이 유지됩니다.");
             CenterAnnouncer.Show("왕의 보폭 효과로 추가 이동 1회가 주어졌습니다.");
-            SkillUIManager.Instance.IsKingDoubleMoveActive = true;
+            SkillUIManager.Instance.SetKingDoubleMovePending(movedPiece);
         }
     }
 

@@ -103,12 +103,19 @@ public partial class PieceSkillManager
         // 체인 중 한 번이라도 차원 암살을 사용했는지 누적 기록 (첫 워프에서 처치하고 두 번째는 그냥 이동해도 디메리트 유지)
         if (allowAttack) warpChainUsedAttack[team] = true;
 
+        // 2026-10-05 수정: 예전에는 chainContinues가 true인 동안(연속 워프의 1번째 사용 직후) 쿨타임을
+        // 전혀 설정하지 않고 2번째 사용이 끝나거나 포기할 때까지 미뤄뒀다. 그런데 1번째 워프만 쓰고
+        // 2번째를 쓰지 않은 채 턴을 넘기면(혹은 그냥 더 이상 쓰지 않으면) 쿨타임 자체가 아예 적용되지
+        // 않는 버그(사실상 매 턴 공짜 워프)가 있었다. 이제 매 사용마다 그 시점까지의 사용 횟수를
+        // 기준으로 쿨타임을 항상 즉시 계산/반영한다: 1회만 쓰면 기본값(4턴), 2회까지 다 쓰면
+        // 연속 워프 디메리트(+2턴)가 추가로 붙어 6턴 - 차원 암살 디메리트(+2턴)는 기존처럼 별도로 누적된다.
+        int cooldown = bishopWarpCooldown;
+        if (hasContinuousWarp && usesSoFar >= 2) cooldown += 2; // 연속 워프를 다 사용한 턴의 디메리트
+        if (warpChainUsedAttack.GetValueOrDefault(team)) cooldown += 2; // 차원 암살로 처치했을 때의 디메리트
+        cooldowns[bishop] = cooldown;
+
         if (!chainContinues)
         {
-            int cooldown = bishopWarpCooldown;
-            if (hasContinuousWarp) cooldown += 2; // 연속 워프를 다 사용한 턴의 디메리트
-            if (warpChainUsedAttack.GetValueOrDefault(team)) cooldown += 2; // 차원 암살로 처치했을 때의 디메리트
-            cooldowns[bishop] = cooldown;
             warpUsesThisTurn[team] = 0;
             warpChainUsedAttack[team] = false;
         }
@@ -223,6 +230,22 @@ public partial class PieceSkillManager
     {
         if (king == null || target == null || IsOnCooldown(king)) return false;
 
+        // 2026-10-05 수정: 아군 전용 스킬인데 팀 검증이 빠져 있어 적 기물도 지휘 대상으로 지정할 수
+        // 있었다(나이트 위협/룩 쉴드는 이미 상대/아군 검증을 하는데 지휘만 빠져 있었음). 이 때문에
+        // 상대 기물을 지정해 상대의 다음 턴에 그 기물만 움직이도록 강제하는 것이 가능한 심각한
+        // 버그였다. 또한 이미 지휘가 예약/활성 중인 팀이 중복으로 다시 지휘를 거는 것도 막는다.
+        if (target.team != king.team) return false;
+
+        // 2026-10-05 수정: 킹 자기 자신을 지휘 대상으로 지정하는 것을 막는다. 왕의 보폭(king_range_up)을
+        // 함께 보유한 상태에서 킹이 스스로를 지휘하면, 지휘로 보장된 2회 이동이 왕의 보폭의 "추가
+        // 이동 1회" 판정/소모 로직과 뒤엉켜(ProcessKingDoubleMove가 지휘의 이동을 보너스 이동으로
+        // 오인) 왕의 보폭 효과가 통째로 증발하는 상호작용 버그가 있었다. 자기 자신 지정 자체가
+        // 기능적으로도 의미가 없으므로(킹이 킹에게 명령) 아예 차단한다.
+        if (target == king) return false;
+
+        if (pendingCommandTarget.ContainsKey(king.team) || IsCommandActiveForTeam(king.team))
+            return false;
+
         if (!HasAnyLegalMove(target))
         {
             Debug.Log("[지휘] 지정한 기물은 현재 이동할 수 없어 지휘 대상으로 선택할 수 없습니다.");
@@ -230,28 +253,37 @@ public partial class PieceSkillManager
             return false;
         }
 
-        commandedPiece = target;
-        commandMovesLeft = 2;
+        // 2026-10-05 수정: 예전에는 여기서 곧바로 commandedPiece/commandMovesLeft를 활성화해,
+        // "섭정"(턴 유지) 보유 시 캐스팅 즉시 같은 턴 안에서 지휘 대상이 2회 이동까지 끝내버리는
+        // 버그가 있었다(왕의 보폭과 겹치면 아예 다른 기물의 보너스 이동 슬롯까지 가로채는 문제도
+        // 있었음). 지휘는 항상 "예약"만 해두고, 실제 활성화(2회 이동 가능 상태로 전환)는
+        // HandleTurnStarted에서 지휘 대상 팀의 다음 턴이 시작될 때 비로소 이뤄지도록 한다 -
+        // 섭정으로 턴이 유지되어 캐스팅한 팀이 같은 턴에 다른 기물을 마저 움직이더라도, 지휘
+        // 대상 자체는 그 턴엔 전혀 움직일 수 없고 반드시 다음 턴에만 2회 이동하게 된다.
+        pendingCommandTarget[king.team] = target;
 
         cooldowns[king] = kingCommandCooldownBase[king.team];
 
-        // 지휘 VFX: 대상 머리 위에 노란 이펙트를 부여, 지휘로 두 번 이동할 때까지 유지
-        if (commandVfxInstance != null) Destroy(commandVfxInstance);
-        commandVfxInstance = SpawnPieceVfx(commandVfxPrefab, target, GetHeadLocalOffset(target));
+        // 지휘 VFX: 대상 머리 위에 노란 이펙트를 부여(예약 표시), 실제 2회 이동이 끝날 때까지 유지
+        if (commandVfxInstanceByTeam.TryGetValue(king.team, out GameObject existingCommandVfx) && existingCommandVfx != null)
+            Destroy(existingCommandVfx);
+        commandVfxInstanceByTeam[king.team] = SpawnPieceVfx(commandVfxPrefab, target, GetHeadLocalOffset(target));
 
         SoundManager.Instance?.PlayCommand();
         NotifySkillUsed(king.team);
         return true;
     }
 
-    // 지휘 기물이 이동할 때마다 이동 횟수를 차감
-    public void OnCommandPieceMoved()
+    // 지휘 기물이 이동할 때마다 이동 횟수를 차감 (2026-10-05 수정: 팀별로 독립 차감)
+    public void OnCommandPieceMoved(int team)
     {
-        if (commandMovesLeft > 0)
+        int left = commandMovesLeftByTeam.GetValueOrDefault(team);
+        if (left > 0)
         {
-            commandMovesLeft--;
-            if (commandMovesLeft <= 0)
-                ClearCommandState();
+            left--;
+            commandMovesLeftByTeam[team] = left;
+            if (left <= 0)
+                ClearCommandState(team);
         }
     }
 
@@ -266,22 +298,22 @@ public partial class PieceSkillManager
     }
 
     // 현재 지휘 대상이 여전히 이동할 수 있는 상태인지 외부(PieceMovement)에서 확인하기 위한 공개 API
-    public bool CommandTargetHasLegalMove() => HasAnyLegalMove(commandedPiece);
+    public bool CommandTargetHasLegalMove(int team) => HasAnyLegalMove(GetCommandedPiece(team));
 
     // 지휘 대상이 상대 턴 사이에 위협을 당하는 등으로 더 이상 이동할 수 없는 상태가 되면, 완료를
     // 기다리지 못하고 지휘 효과를 강제로 종료해 게임 진행이 멈추지 않도록 한다 (PieceMovement에서 호출).
-    public void ForceEndCommand() => ClearCommandState();
+    public void ForceEndCommand(int team) => ClearCommandState(team);
 
-    // 지휘 상태(대상/잔여 이동 횟수/VFX) 정리 공통 처리
-    private void ClearCommandState()
+    // 지휘 상태(대상/잔여 이동 횟수/VFX) 정리 공통 처리 (2026-10-05 수정: 팀별로 독립 정리)
+    private void ClearCommandState(int team)
     {
-        commandedPiece = null;
-        commandMovesLeft = 0;
+        commandedPieceByTeam.Remove(team);
+        commandMovesLeftByTeam.Remove(team);
 
-        if (commandVfxInstance != null)
+        if (commandVfxInstanceByTeam.TryGetValue(team, out GameObject vfx))
         {
-            Destroy(commandVfxInstance);
-            commandVfxInstance = null;
+            if (vfx != null) Destroy(vfx);
+            commandVfxInstanceByTeam.Remove(team);
         }
     }
 

@@ -50,35 +50,32 @@ public class PieceMovement : MonoBehaviour
             }
         }
 
-        // 킹 지휘(commandedPiece/commandMovesLeft)는 팀별로 나뉘지 않는 단일 상태이지만, "지휘 대상만
-        // 이동 가능"이라는 제약 자체는 지휘를 사용한 팀의 턴에만 걸려야 한다.
+        // 킹 지휘(commandedPieceByTeam/commandMovesLeftByTeam)는 2026-10-05 수정으로 팀별로 완전히
+        // 분리되어 있다. "지휘 대상만 이동 가능"이라는 제약은 지휘를 사용한(=지휘 대상이 속한) 팀의
+        // 턴에만 걸려야 하므로, 지금 행동 중인 팀을 기준으로 그 팀의 지휘 상태만 조회한다.
         // 2026-09-23 수정: 예전에는 팀 구분 없이 무조건 지휘 대상 기물 외의 모든 이동을 막아버렸다.
         // 섭정처럼 같은 턴 안에서 2회 이동이 곧바로 끝나는 경우가 아니라면(=일반적인 지휘 사용 시),
         // 지휘를 사용한 직후 턴이 상대에게 넘어가도 이 제약이 그대로 걸려 있어 상대가 자기 턴에
         // 아무 기물도 움직일 수 없이 완전히 멈춰버리는 심각한 버그였다. 이제 "지금이 지휘 대상 기물
         // 팀의 턴인가"를 함께 확인해 상대 턴에는 이 제약이 전혀 작동하지 않도록 한다.
-        if (PieceSkillManager.Instance != null && PieceSkillManager.Instance.IsCommandActive)
+        int actingTeamForCommand = GameManager.Instance != null ? GameManager.Instance.CurrentTurn : piece.team;
+        if (PieceSkillManager.Instance != null && PieceSkillManager.Instance.IsCommandActiveForTeam(actingTeamForCommand))
         {
-            ChessPieces commandTarget = PieceSkillManager.Instance.CommandedPiece;
-            bool isCommandTeamsTurn = commandTarget != null && GameManager.Instance != null
-                && GameManager.Instance.CurrentTurn == commandTarget.team;
+            ChessPieces commandTarget = PieceSkillManager.Instance.GetCommandedPiece(actingTeamForCommand);
 
-            if (isCommandTeamsTurn)
+            // 지휘 대상이 상대 턴 사이에 위협을 당하거나 아군 기물에 완전히 막히는 등으로 더 이상
+            // 이동할 수 없는 상태가 되면, 지휘가 영원히 완료되지 못해 게임이 멈추므로 강제 종료한다.
+            if (!PieceSkillManager.Instance.CommandTargetHasLegalMove(actingTeamForCommand))
             {
-                // 지휘 대상이 상대 턴 사이에 위협을 당하거나 아군 기물에 완전히 막히는 등으로 더 이상
-                // 이동할 수 없는 상태가 되면, 지휘가 영원히 완료되지 못해 게임이 멈추므로 강제 종료한다.
-                if (!PieceSkillManager.Instance.CommandTargetHasLegalMove())
-                {
-                    Debug.Log("[지휘] 지휘 대상 기물이 더 이상 이동할 수 없어 지휘 효과를 종료합니다.");
-                    CenterAnnouncer.Show("지휘 대상이 더 이상 이동할 수 없어 지휘 효과가 종료되었습니다.");
-                    PieceSkillManager.Instance.ForceEndCommand();
-                }
-                else if (piece != commandTarget)
-                {
-                    Debug.LogWarning("지휘 스킬이 활성화된 상태에서는 지휘 대상 기물만 이동할 수 있습니다.");
-                    CenterAnnouncer.Show("지휘 효과가 활성화된 동안에는 지정한 기물만 이동할 수 있습니다.");
-                    return;
-                }
+                Debug.Log("[지휘] 지휘 대상 기물이 더 이상 이동할 수 없어 지휘 효과를 종료합니다.");
+                CenterAnnouncer.Show("지휘 대상이 더 이상 이동할 수 없어 지휘 효과가 종료되었습니다.");
+                PieceSkillManager.Instance.ForceEndCommand(actingTeamForCommand);
+            }
+            else if (piece != commandTarget)
+            {
+                Debug.LogWarning("지휘 스킬이 활성화된 상태에서는 지휘 대상 기물만 이동할 수 있습니다.");
+                CenterAnnouncer.Show("지휘 효과가 활성화된 동안에는 지정한 기물만 이동할 수 있습니다.");
+                return;
             }
         }
 
@@ -114,11 +111,11 @@ public class PieceMovement : MonoBehaviour
         // 엉뚱하게 소모되고 그 턴 종료 처리까지 건너뛰는 문제가 있었다. 실제 지휘 대상 기물이 움직인
         // 경우에만 차감하도록 제한한다.
         bool wasCommandMove = false;
-        if (PieceSkillManager.Instance != null && PieceSkillManager.Instance.IsCommandActive
-            && piece == PieceSkillManager.Instance.CommandedPiece)
+        if (PieceSkillManager.Instance != null && PieceSkillManager.Instance.IsCommandActiveForTeam(piece.team)
+            && piece == PieceSkillManager.Instance.GetCommandedPiece(piece.team))
         {
             wasCommandMove = true;
-            PieceSkillManager.Instance.OnCommandPieceMoved();
+            PieceSkillManager.Instance.OnCommandPieceMoved(piece.team);
         }
 
         // 6. 이동 포물선 애니메이션 및 캐슬링 실행
@@ -136,18 +133,28 @@ public class PieceMovement : MonoBehaviour
         }
 
         // 8. 지휘 첫 번째 이동 완료 시 연속 이동 허용 (턴 종료 대기)
-        if (wasCommandMove && PieceSkillManager.Instance != null && PieceSkillManager.Instance.IsCommandActive)
+        // 2026-10-05 수정: 예전에는 여기서 SkillUIManager.OnPieceMoved를 호출하지 않아
+        // HasMovedThisTurn이 계속 false로 남아, 지휘의 첫 번째 이동 직후에도 "아직 아무도 안
+        // 움직인 것"처럼 보여 다른 스킬 버튼(비숍/킹)이 계속 눌리는 문제가 있었다. 턴을 끝내지
+        // 않는 것(자동 종료 보류)은 CheckAutoTurnEnd의 isCommandTeamsTurn 가드가 이미 처리하므로,
+        // OnPieceMoved는 그대로 호출해도 안전하다.
+        if (wasCommandMove && PieceSkillManager.Instance != null && PieceSkillManager.Instance.IsCommandActiveForTeam(piece.team))
         {
             Debug.Log("지휘 연속 이동: 1회 추가 이동 가능");
             if (ChessInteractionManager.Instance != null)
             {
                 ChessInteractionManager.Instance.DeselectPiece();
             }
+            if (SkillUIManager.Instance != null)
+                SkillUIManager.Instance.OnPieceMoved(piece);
             return;
         }
 
         // 8-1. 노말3 "왕의 보폭": ChessInteractionManager.ProcessKingDoubleMove가 이번 이동으로
         // 보너스 이동권을 부여했다면(IsKingDoubleMoveActive == true), 턴을 끝내지 않고 대기한다.
+        // 2026-10-05 수정: 위 8번과 동일한 이유로 OnPieceMoved를 호출해 HasMovedThisTurn을 갱신한다
+        // - 이래야 킹이 보너스 이동을 기다리는 동안 지휘/비숍 스킬 버튼이 비활성화된다
+        // (CheckAutoTurnEnd는 IsKingDoubleMoveActive 가드로 자동 종료를 막아주므로 안전하다).
         if (SkillUIManager.Instance != null && SkillUIManager.Instance.IsKingDoubleMoveActive)
         {
             Debug.Log("[왕의 보폭] 추가 이동 대기 중: 턴을 유지합니다.");
@@ -155,6 +162,7 @@ public class PieceMovement : MonoBehaviour
             {
                 ChessInteractionManager.Instance.DeselectPiece();
             }
+            SkillUIManager.Instance.OnPieceMoved(piece);
             return;
         }
 

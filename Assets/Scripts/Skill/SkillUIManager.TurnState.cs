@@ -30,6 +30,7 @@ public partial class SkillUIManager
         HasUsedSkillThisTurn = false;
 
         IsKingDoubleMoveActive = false;
+        KingDoubleMovePiece = null;
 
         // 2026-10-03 수정: 턴이 시작될 때(=상대/내 턴이 끝난 직후) 이전 턴에 켜져 있던 스킬 범위
         // 하이라이트(위협/쉴드 등)가 그대로 남아있던 문제의 안전망. 정상 흐름이면 OnEndTurnButtonClicked()
@@ -41,9 +42,9 @@ public partial class SkillUIManager
         // 안에서 2회 이동으로 끝나는 경우가 보통이지만, 섭정 등으로 턴이 유지되지 않고 넘어간 뒤 다시
         // 돌아오는 경우를 위한 안내)
         var psm = PieceSkillManager.Instance;
-        if (psm != null && psm.IsCommandActive && psm.CommandedPiece != null && psm.CommandedPiece.team == newTurnTeam)
+        if (psm != null && psm.IsCommandActiveForTeam(newTurnTeam))
         {
-            CenterAnnouncer.Show($"지휘 효과: 지정한 기물을 이번 턴에 {psm.CommandMovesLeft}회 이동시켜야 합니다.");
+            CenterAnnouncer.Show($"지휘 효과: 지정한 기물을 이번 턴에 {psm.GetCommandMovesLeft(newTurnTeam)}회 이동시켜야 합니다.");
         }
 
         RefreshUIState();
@@ -88,8 +89,8 @@ public partial class SkillUIManager
         // 상대 팀이 자기 턴에 정상적으로 이동을 마쳐도 이 턴이 자동으로 끝나지 않는 문제가 있었다.
         // (지휘 대상 팀의 턴일 때만 "지휘가 끝날 때까지 자동 종료 보류"가 적용되어야 한다)
         var psm = PieceSkillManager.Instance;
-        bool isCommandTeamsTurn = psm != null && psm.IsCommandActive && psm.CommandedPiece != null
-            && GameManager.Instance != null && GameManager.Instance.CurrentTurn == psm.CommandedPiece.team;
+        int actingTeamForCommandCheck = GameManager.Instance != null ? GameManager.Instance.CurrentTurn : movedPiece.team;
+        bool isCommandTeamsTurn = psm != null && psm.IsCommandActiveForTeam(actingTeamForCommandCheck);
         if (isCommandTeamsTurn)
             return;
 
@@ -142,6 +143,9 @@ public partial class SkillUIManager
         int myTeam = GameStartController.LocalTeam >= 0 ? GameStartController.LocalTeam : currentTurn;
         if (currentTurn != myTeam) return;
 
+        // 2026-10-05 수정 후 되돌림: 턴 종료 버튼은 "이번 턴엔 1회만 이동하고 전략적으로 넘긴다"는
+        // 의도된 선택지라는 사용자 확인에 따라, 왕의 보폭/지휘의 강제 추가 이동 여부와 무관하게
+        // 항상 턴 종료를 허용하도록 원래 동작으로 되돌린다.
         GameManager.Instance?.RequestEndTurn();
     }
 

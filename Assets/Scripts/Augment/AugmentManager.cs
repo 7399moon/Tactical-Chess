@@ -158,9 +158,21 @@ public class AugmentManager : MonoBehaviour
         if (IsKnight(attacker.type) && hasKnightKillCdReduction.GetValueOrDefault(team))
             PieceSkillManager.Instance.ReduceCooldown(attacker, 1);
 
-        // 레어3: 위협 대상을 잡음 (victim에 위협 표식이 있는 경우)
+        // 레어3(연쇄 위협): 위협 대상을 잡음 (victim에 위협 표식이 있는 경우)
+        // 2026-10-05 수정: 예전에는 이 조건을 만족하면 무조건 "처치한 기물(attacker) 자신"의 쿨타임을
+        // 깎았다. 연쇄 위협은 "나이트의 위협 스킬" 쿨타임을 감소시키는 증강인데, 나이트가 아닌 다른
+        // 기물(비숍/룩 등)이 마무리를 지은 경우 엉뚱하게 그 기물 자신의 스킬 쿨타임이 깎여버리는
+        // 버그였다(예: 워프 가속+연쇄 위협을 함께 보유한 비숍이 위협당한 기물을 처치하면, 룰상으로는
+        // 위협 쿨타임만 깎여야 하는데 실제로는 비숍 자신의 워프 쿨타임이 깎였다 - 반대로 아래 레어5
+        // 조건도 함께 성립해 워프 쿨타임이 별도로 또 깎이면서 중복 감소까지 발생할 수 있었다).
+        // 이제 "처치한 기물의 종류와 무관하게 위협 스킬(나이트) 쿨타임만" 깎도록, attacker가 나이트가
+        // 아니면 해당 팀에서 쿨타임이 걸려 있는 나이트를 찾아 그 쿨타임을 감소시킨다.
         if (hasThreatTargetKillCdReduction.GetValueOrDefault(team) && victim.IsThreatenedTarget)
-            PieceSkillManager.Instance.ReduceCooldown(attacker, 1);
+        {
+            ChessPieces knightToReduce = IsKnight(attacker.type) ? attacker : FindKnightOnCooldown(team);
+            if (knightToReduce != null)
+                PieceSkillManager.Instance.ReduceCooldown(knightToReduce, 1);
+        }
 
         // 레어5: 비숍이 적 처치
         if (IsBishop(attacker.type) && hasBishopKillCdReduction.GetValueOrDefault(team))
@@ -175,6 +187,28 @@ public class AugmentManager : MonoBehaviour
     private bool IsKnight(ChessPieceType t) => t == ChessPieceType.WhiteKnight || t == ChessPieceType.BlackKnight;
     private bool IsBishop(ChessPieceType t) => t == ChessPieceType.WhiteBishop || t == ChessPieceType.BlackBishop;
     private bool IsRook(ChessPieceType t) => t == ChessPieceType.WhiteRook || t == ChessPieceType.BlackRook;
+
+    // 2026-10-05 추가: 레어3(연쇄 위협)용 - 처치한 기물이 나이트가 아닐 때, 쿨타임 감소를 받을
+    // "그 팀의 나이트(위협 스킬이 쿨타임 중인 개체)"를 보드에서 찾는다. 나이트가 여럿이어도
+    // 실제로 위협을 사용해 쿨타임이 걸려 있는 나이트만 대상이어야 하므로 IsOnCooldown으로 필터링한다.
+    private ChessPieces FindKnightOnCooldown(int team)
+    {
+        if (ChessBoard.Instance == null || ChessBoard.Instance.Pieces == null || PieceSkillManager.Instance == null)
+            return null;
+
+        ChessPieces[,] board = ChessBoard.Instance.Pieces;
+        for (int x = 0; x < ChessBoard.TileCountX; x++)
+        {
+            for (int y = 0; y < ChessBoard.TileCountY; y++)
+            {
+                ChessPieces p = board[x, y];
+                if (p != null && p.team == team && IsKnight(p.type) && PieceSkillManager.Instance.IsOnCooldown(p))
+                    return p;
+            }
+        }
+
+        return null;
+    }
     #endregion
 
     #region 매치 리셋

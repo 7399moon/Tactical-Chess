@@ -96,9 +96,13 @@ public class QueenSkill : MonoBehaviour
     }
 
     // 6스택 달성 후 타깃 아군 기물을 승급 처리
-    public bool TryPromoteTarget(ChessPieces targetPiece)
+    // 2026-10-05 수정: 예전에는 target의 team을 그대로 "발동 팀"으로 사용해서, 적 기물을 클릭해도
+    // (심지어 적 팀이 마침 6스택이었다면) 적 기물이 승급당하는 등 팀 검증이 전혀 없었다.
+    // 반드시 실제로 스킬을 발동한 팀(actingTeam)의 턴이고, 대상도 그 팀 소속이어야만 승급을 허용한다.
+    public bool TryPromoteTarget(ChessPieces targetPiece, int actingTeam)
     {
         if (targetPiece == null || chessBoard == null) return false;
+        if (targetPiece.team != actingTeam) return false;
 
         int team = targetPiece.team;
         if (!IsMaxStack(team)) return false;

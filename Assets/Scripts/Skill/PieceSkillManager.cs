@@ -34,9 +34,10 @@ public partial class PieceSkillManager : MonoBehaviour
     private readonly Dictionary<ChessPieces, int> immobilized = new Dictionary<ChessPieces, int>();
     private readonly Dictionary<ChessPieces, int> shielded = new Dictionary<ChessPieces, int>();
 
-    // 킹 지휘 대상 보관
+    // 킹 지휘 대상 보관: 캐스팅 시점엔 "예약"만 되고(pendingCommandTarget), 지휘 대상 팀의 다음
+    // 턴이 시작될 때 HandleTurnStarted에서 비로소 commandedPiece/commandMovesLeft로 활성화된다
+    // (2026-10-05 수정: 캐스팅한 바로 그 턴에 대상이 움직여버리는 버그 수정 - 아래 HandleTurnStarted 참고).
     private readonly Dictionary<int, ChessPieces> pendingCommandTarget = new Dictionary<int, ChessPieces>();
-    private readonly Dictionary<int, ChessPieces> commandExtraMoveThisTurn = new Dictionary<int, ChessPieces>();
 
     // 유니크2(연속 워프) 판정용: 이번 턴에 사용한 워프 횟수 (팀별)
     private readonly Dictionary<int, int> warpUsesThisTurn = new Dictionary<int, int> { { 0, 0 }, { 1, 0 } };
@@ -46,13 +47,18 @@ public partial class PieceSkillManager : MonoBehaviour
     // GC Alloc 방지용 Key 캐싱 리스트
     private readonly List<ChessPieces> tickCacheKeys = new List<ChessPieces>();
 
-    private ChessPieces commandedPiece = null;
-    private int commandMovesLeft = 0;
+    // 2026-10-05 수정(2차): pendingCommandTarget은 팀별로 분리돼 있었지만, 정작 "활성화된" 지휘
+    // 상태(commandedPiece/commandMovesLeft)는 팀 구분 없는 단일 필드였다. 그 결과 양 팀이 각자
+    // 지휘를 예약해두면, 나중에 활성화되는 팀의 HandleTurnStarted 호출이 먼저 활성화돼 있던 다른
+    // 팀의 지휘 상태를 통째로 덮어써 버리는 치명적 버그가 있었다(그 팀의 지휘 대상/잔여 이동이
+    // 흔적도 없이 사라지고 VFX도 고아 상태로 남음). 팀별 Dictionary로 완전히 분리해 관리한다.
+    private readonly Dictionary<int, ChessPieces> commandedPieceByTeam = new Dictionary<int, ChessPieces>();
+    private readonly Dictionary<int, int> commandMovesLeftByTeam = new Dictionary<int, int>();
 
     // 위협/쉴드/지휘 VFX 인스턴스 추적 (상태 종료 시 직접 파괴하기 위함)
     private readonly Dictionary<ChessPieces, GameObject> threatVfxInstances = new Dictionary<ChessPieces, GameObject>();
     private readonly Dictionary<ChessPieces, GameObject> shieldVfxInstances = new Dictionary<ChessPieces, GameObject>();
-    private GameObject commandVfxInstance;
+    private readonly Dictionary<int, GameObject> commandVfxInstanceByTeam = new Dictionary<int, GameObject>();
 
     // 킹 지휘 스킬의 "기본" 쿨타임(사용 직후 다시 채워지는 값)을 팀별로 독립 관리한다.
     // (2026-09-21 수정 1-3: 예전에는 kingCommandCooldown이 팀 구분 없는 단일 필드라, 레전더리5
@@ -68,10 +74,15 @@ public partial class PieceSkillManager : MonoBehaviour
     #endregion
 
     #region 외부 공개 프로퍼티
-    public bool IsCommandActive => commandedPiece != null && commandMovesLeft > 0;
-    public ChessPieces CommandedPiece => commandedPiece;
+    // 2026-10-05 수정: 팀별로 완전히 독립된 지휘 상태를 조회하도록 team 매개변수를 받는 메서드로
+    // 바꿨다(기존의 팀 구분 없는 단일 프로퍼티가 위 commandedPieceByTeam 필드 주석에 적은 버그의
+    // 원인이었다). 호출부는 전부 "지금 행동 중인 팀" 또는 "확인하려는 기물의 팀"을 이미 알고
+    // 있으므로 team을 넘기는 것으로 자연스럽게 치환된다.
+    public bool IsCommandActiveForTeam(int team) =>
+        commandedPieceByTeam.TryGetValue(team, out ChessPieces p) && p != null && commandMovesLeftByTeam.GetValueOrDefault(team) > 0;
+    public ChessPieces GetCommandedPiece(int team) => commandedPieceByTeam.TryGetValue(team, out ChessPieces p) ? p : null;
     // 2026-10-04 추가: 턴 시작 시 "지휘 대상을 N회 더 이동시켜야 합니다" 화면 안내(CenterAnnouncer)에 사용.
-    public int CommandMovesLeft => commandMovesLeft;
+    public int GetCommandMovesLeft(int team) => commandMovesLeftByTeam.GetValueOrDefault(team);
     #endregion
 
     #region 유니티 생명주기
@@ -117,17 +128,18 @@ public partial class PieceSkillManager : MonoBehaviour
 
         TickShieldDictionary();
 
-        // 지난 턴의 지휘 추가 이동권 제거
-        commandExtraMoveThisTurn.Remove(newTurnTeam);
-
         // 연속 워프 사용 횟수 초기화 (해당 팀의 새 턴 시작)
         warpUsesThisTurn[newTurnTeam] = 0;
         warpChainUsedAttack[newTurnTeam] = false;
 
-        // 해당 팀 턴 시작 시 지휘 대상에게 추가 이동권 실부여
+        // 2026-10-05 수정: 지휘는 캐스팅한 턴엔 예약만 되어 있고(pendingCommandTarget), 지휘 대상
+        // 팀의 턴이 "새로" 시작되는 바로 이 시점에만 실제로 활성화(2회 이동 가능)된다. 캐스팅한
+        // 팀이 섭정 등으로 같은 턴을 계속 이어가더라도 여기(새 턴 시작)를 거치지 않으므로 지휘
+        // 대상은 그 턴엔 전혀 움직일 수 없다.
         if (pendingCommandTarget.TryGetValue(newTurnTeam, out ChessPieces target) && target != null)
         {
-            commandExtraMoveThisTurn[newTurnTeam] = target;
+            commandedPieceByTeam[newTurnTeam] = target;
+            commandMovesLeftByTeam[newTurnTeam] = 2;
             pendingCommandTarget.Remove(newTurnTeam);
         }
     }
@@ -261,15 +273,14 @@ public partial class PieceSkillManager : MonoBehaviour
         immobilized.Clear();
         shielded.Clear();
         pendingCommandTarget.Clear();
-        commandExtraMoveThisTurn.Clear();
 
         warpUsesThisTurn[0] = 0;
         warpUsesThisTurn[1] = 0;
         warpChainUsedAttack[0] = false;
         warpChainUsedAttack[1] = false;
 
-        commandedPiece = null;
-        commandMovesLeft = 0;
+        commandedPieceByTeam.Clear();
+        commandMovesLeftByTeam.Clear();
 
         // 이전 매치에서 남아있을 수 있는 위협/쉴드/지휘 VFX 인스턴스 정리
         foreach (var kv in threatVfxInstances)
@@ -284,11 +295,11 @@ public partial class PieceSkillManager : MonoBehaviour
         }
         shieldVfxInstances.Clear();
 
-        if (commandVfxInstance != null)
+        foreach (var kv in commandVfxInstanceByTeam)
         {
-            Destroy(commandVfxInstance);
-            commandVfxInstance = null;
+            if (kv.Value != null) Destroy(kv.Value);
         }
+        commandVfxInstanceByTeam.Clear();
 
         kingCommandCooldownBase[0] = kingCommandCooldownDefault;
         kingCommandCooldownBase[1] = kingCommandCooldownDefault;
