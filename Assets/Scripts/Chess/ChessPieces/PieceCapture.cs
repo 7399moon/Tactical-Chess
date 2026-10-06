@@ -31,6 +31,18 @@ public class PieceCapture : MonoBehaviour
             return;
         }
 
+        // 1.5. 스킬 상태 정리 (2026-10-06 수정): victim이 다른 팀의 위협/쉴드 대상이었거나, 자신의
+        // 팀의 킹 지휘 예약/활성 대상이었다면 여기서 정리해야 한다. 기존에는 이 정리가 승급(프로모션)
+        // 시에만 호출됐고(ChessBoard.PromotePieceAt -> ClearPieceState) 캡처 시에는 전혀 호출되지
+        // 않아서, "킹 지휘로 예약(pendingCommandTarget)해 둔 아군이 활성화되기 전에 상대에게 캡처당하면
+        // 그 예약 항목이 영원히 제거되지 않는" 치명적 버그가 있었다. HandleTurnStarted는 예약 대상이
+        // null일 때(=캡처로 파괴됨) pendingCommandTarget.Remove를 건너뛰므로, 그 팀은 이후 쿨타임이
+        // 다 돌아도 TryUseCommand의 "이미 예약/활성 중" 가드에 걸려 지휘를 다시는 쓸 수 없게 된다.
+        // (활성 중인 지휘 대상이 2회 이동을 다 쓰기 전에 캡처되는 경우도, commandedPieceByTeam/VFX를
+        // 여기서 함께 정리해줘야 깔끔하게 종료된다.)
+        if (PieceSkillManager.Instance != null)
+            PieceSkillManager.Instance.ClearPieceState(victim, victim.team);
+
         // 2. 캡처 사운드 재생 (여기까지 왔다는 것은 쉴드에 막히지 않은 실제 캡처가 확정된 것)
         SoundManager.Instance?.PlayCapture();
 

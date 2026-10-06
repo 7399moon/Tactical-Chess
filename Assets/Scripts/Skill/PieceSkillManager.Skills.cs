@@ -26,8 +26,9 @@ public partial class PieceSkillManager
         // 레어1(위협 확장): AugmentManager에 누적된 범위 보너스를 실제로 반영
         int range = 1 + (AugmentManager.Instance != null ? AugmentManager.Instance.GetKnightThreatRangeBonus(knight.team) : 0);
 
-        foreach (ChessPieces target in targets)
+        for (int ti = 0; ti < targets.Count; ti++)
         {
+            ChessPieces target = targets[ti];
             if (target == null || target.team == knight.team) return false;
             if (Mathf.Abs(knight.currentX - target.currentX) > range || Mathf.Abs(knight.currentY - target.currentY) > range)
                 return false;
@@ -45,8 +46,9 @@ public partial class PieceSkillManager
         // 방금 세팅된 값을 기준으로 정상적으로 차감된다.
         cooldowns[knight] = knightThreatCooldown + (executes ? 2 : 0);
 
-        foreach (ChessPieces target in targets)
+        for (int ti = 0; ti < targets.Count; ti++)
         {
+            ChessPieces target = targets[ti];
             immobilized[target] = 2; // 다음 턴까지 유지
             target.IsThreatenedTarget = true; // 레어3(연쇄 위협) 판정을 위해 표식 부여
 
@@ -136,7 +138,13 @@ public partial class PieceSkillManager
         int cooldown = bishopWarpCooldown;
         if (hasContinuousWarp && usesSoFar >= 2) cooldown += 2; // 연속 워프를 다 사용한 턴의 디메리트
         if (warpChainUsedAttack.GetValueOrDefault(team)) cooldown += 2; // 차원 암살로 처치했을 때의 디메리트
-        cooldowns[bishop] = cooldown;
+
+        // 2026-10-06 수정: 여기서 즉시 cooldowns[bishop]에 반영하면 연속 워프의 2번째 사용이 1번째
+        // 사용 직후 걸린 쿨타임에 막혀버린다. 턴이 끝날 때(PieceSkillManager.HandleTurnStarted) 적용할
+        // "예약된 쿨타임"으로만 기록해둔다 - 매 사용마다 덮어써지므로 턴 종료 시점엔 항상 그 턴의
+        // 최종 사용 횟수를 반영한 값이 적용된다.
+        pendingWarpBishop[team] = bishop;
+        pendingWarpCooldown[team] = cooldown;
 
         if (!chainContinues)
         {
@@ -214,8 +222,9 @@ public partial class PieceSkillManager
         // 레어6(쉴드 확장): AugmentManager에 누적된 범위 보너스를 실제로 반영
         int range = 1 + (AugmentManager.Instance != null ? AugmentManager.Instance.GetRookShieldRangeBonus(rook.team) : 0);
 
-        foreach (ChessPieces target in targets)
+        for (int ti = 0; ti < targets.Count; ti++)
         {
+            ChessPieces target = targets[ti];
             if (target == null || target.team != rook.team) return false;
             if (target == rook && !allowSelfTarget) return false;
             if (Mathf.Abs(rook.currentX - target.currentX) > range || Mathf.Abs(rook.currentY - target.currentY) > range)
@@ -224,8 +233,9 @@ public partial class PieceSkillManager
 
         // 유니크4(장기 수호): 지속시간 2턴 증가.
         int duration = HasAugment(rook.team, "rook_shield_duration_up") ? 6 : 2;
-        foreach (ChessPieces target in targets)
+        for (int ti = 0; ti < targets.Count; ti++)
         {
+            ChessPieces target = targets[ti];
             shielded[target] = duration;
 
             // 쉴드 VFX: 대상을 감싸는 푸른 이펙트를 쉴드 지속시간 동안 유지 (기존 인스턴스가 있으면 교체)

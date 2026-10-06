@@ -23,6 +23,9 @@ public class BoardTileHighlighter : MonoBehaviour
     #region 내부 상태 필드
     private TileHighlightState[,] tileHighlightStates;
     private Material[,] tileMaterialInstances;
+    // 타일 기본색 캐시: RefreshTileColor가 호출될 때마다 Material.color(네이티브 호출)를 읽지 않도록 초기화 시 한 번만 읽는다.
+    private Color whiteTileColor;
+    private Color blackTileColor;
 
     private Vector2Int checkedKingTile = -Vector2Int.one;
     private readonly List<Vector2Int> checkmateAttackerTiles = new List<Vector2Int>();
@@ -50,6 +53,8 @@ public class BoardTileHighlighter : MonoBehaviour
         board = chessBoard;
         tileHighlightStates = new TileHighlightState[ChessBoard.TileCountX, ChessBoard.TileCountY];
         tileMaterialInstances = new Material[ChessBoard.TileCountX, ChessBoard.TileCountY];
+        whiteTileColor = board.TileMaterialWhite.color;
+        blackTileColor = board.TileMaterialBlack.color;
 
         for (int x = 0; x < ChessBoard.TileCountX; x++)
         {
@@ -75,7 +80,7 @@ public class BoardTileHighlighter : MonoBehaviour
         if (board == null || tileMaterialInstances == null) return;
 
         // 체스판 체크판 무늬 기본 색상 계산
-        Color baseColor = ((pos.x + pos.y) % 2 == 0) ? board.TileMaterialWhite.color : board.TileMaterialBlack.color;
+        Color baseColor = (((pos.x + pos.y) & 1) == 0) ? whiteTileColor : blackTileColor;
         Color result = baseColor;
 
         // 1. 이동 / 공격 타일 하이라이트 적용
@@ -123,8 +128,9 @@ public class BoardTileHighlighter : MonoBehaviour
     {
         ClearCustomHighlights();
 
-        foreach (Vector2Int pos in tiles)
+        for (int i = 0; i < tiles.Count; i++)
         {
+            Vector2Int pos = tiles[i];
             if (pos.x >= 0 && pos.x < ChessBoard.TileCountX && pos.y >= 0 && pos.y < ChessBoard.TileCountY)
             {
                 tileHighlightStates[pos.x, pos.y] = TileHighlightState.Move;
@@ -178,8 +184,8 @@ public class BoardTileHighlighter : MonoBehaviour
         if (attackerTiles != null)
             checkmateAttackerTiles.AddRange(attackerTiles);
 
-        foreach (var tile in checkmateAttackerTiles)
-            RefreshTileColor(tile, -Vector2Int.one);
+        for (int i = 0; i < checkmateAttackerTiles.Count; i++)
+            RefreshTileColor(checkmateAttackerTiles[i], -Vector2Int.one);
     }
     #endregion
 }

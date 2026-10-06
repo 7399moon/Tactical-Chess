@@ -78,13 +78,6 @@ public partial class SkillUIManager : MonoBehaviour
         new Vector2Int(1, 0)
     };
 
-    // 주변 8방향 인접 오프셋
-    private static readonly Vector2Int[] SurroundingOffsets = new Vector2Int[]
-    {
-        new Vector2Int(-1, -1), new Vector2Int(-1, 0), new Vector2Int(-1, 1),
-        new Vector2Int(0, -1),                          new Vector2Int(0, 1),
-        new Vector2Int(1, -1),  new Vector2Int(1, 0),   new Vector2Int(1, 1)
-    };
     #endregion
 
     #region 유니티 생명주기

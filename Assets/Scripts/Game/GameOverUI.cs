@@ -118,10 +118,17 @@ public class GameOverUI : MonoBehaviour
     // 그 외(로컬/비네트워크 테스트)에는 이 클라이언트에서 바로 리셋한다.
     private void OnRestartButtonPressed()
     {
+        // 2026-10-06 수정: 재시작마다 증강 체크포인트 등급 시드(MatchSession.AugmentSeed)도 새로 뽑아야
+        // 재시작한 새 매치의 첫 증강이 이전 매치와 같은 등급으로 고정되지 않는다.
+        int freshAugmentSeed = UnityEngine.Random.Range(int.MinValue, int.MaxValue);
+
         if (GameStartController.LocalTeam >= 0 && ChessNetworkSync.Instance != null)
-            ChessNetworkSync.Instance.RPC_RelayRestartMatch();
+            ChessNetworkSync.Instance.RPC_RelayRestartMatch(freshAugmentSeed);
         else
+        {
+            MatchSession.AugmentSeed = freshAugmentSeed;
             GameStartController.Instance?.StartMatch();
+        }
     }
 
     // "타이틀로 이동" 버튼 클릭 핸들러.

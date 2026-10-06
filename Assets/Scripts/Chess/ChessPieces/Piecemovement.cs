@@ -255,20 +255,44 @@ public class PieceMovement : MonoBehaviour
     #endregion
 
     #region 이동 애니메이션 코루틴 및 헬퍼
+    // 포물선 높이용 sin(π·t) 값을 미리 계산해 둔 테이블 (프레임마다 Mathf.Sin 호출 방지)
+    private const int ArcTableSegments = 32;
+    private static readonly float[] ArcSineTable = BuildArcSineTable();
+
+    private static float[] BuildArcSineTable()
+    {
+        var table = new float[ArcTableSegments + 1];
+        for (int i = 0; i <= ArcTableSegments; i++)
+            table[i] = Mathf.Sin(Mathf.PI * i / ArcTableSegments);
+        return table;
+    }
+
+    // t(0~1)에 대한 sin(π·t)를 테이블 선형 보간으로 근사 (최대 오차 약 0.001 - 육안으로 구분 불가)
+    private static float SampleArc(float t)
+    {
+        float scaled = t * ArcTableSegments;
+        int index = (int)scaled;
+        if (index >= ArcTableSegments) return ArcSineTable[ArcTableSegments];
+
+        float frac = scaled - index;
+        return ArcSineTable[index] + (ArcSineTable[index + 1] - ArcSineTable[index]) * frac;
+    }
+
     // 기물을 시작 위치에서 목표 위치까지 포물선을 그리며 이동시키는 연출 코루틴
     private IEnumerator MovePieceAnimated(ChessPieces piece, Vector3 targetPosition)
     {
         Vector3 startPosition = piece.transform.position;
         float duration = Mathf.Max(0.0001f, moveDuration);
+        float invDuration = 1f / duration; // 프레임마다 나누지 않고 곱셈으로 정규화
         float elapsed = 0f;
 
         while (elapsed < duration)
         {
             elapsed += Time.deltaTime;
-            float normalized = Mathf.Clamp01(elapsed / duration);
+            float normalized = Mathf.Clamp01(elapsed * invDuration);
 
             Vector3 flatPosition = Vector3.Lerp(startPosition, targetPosition, normalized);
-            float height = Mathf.Sin(normalized * Mathf.PI) * arcHeight;
+            float height = SampleArc(normalized) * arcHeight;
 
             piece.transform.position = flatPosition + Vector3.up * height;
             yield return null;

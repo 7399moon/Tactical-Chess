@@ -36,7 +36,7 @@ public class AugmentViewUI : MonoBehaviour
 
     #region 내부 상태
     private int currentTeam;
-    private readonly List<GameObject> spawnedCards = new List<GameObject>();
+    private readonly List<CardUI> spawnedCards = new List<CardUI>(); // 한 번 만든 카드는 파괴하지 않고 재사용(풀)
     #endregion
 
     #region 유니티 생명주기
@@ -107,7 +107,7 @@ public class AugmentViewUI : MonoBehaviour
     // 현재 선택된 팀이 보유한 증강 목록을 읽어와 카드로 나열한다.
     private void RefreshCards()
     {
-        ClearSpawnedCards();
+        HideSpawnedCards();
 
         IReadOnlyCollection<string> ids = AugmentManager.Instance != null
             ? AugmentManager.Instance.GetAcquiredAugmentIds(currentTeam)
@@ -120,27 +120,37 @@ public class AugmentViewUI : MonoBehaviour
         if (!hasAny || heldCardPrefab == null || cardContent == null)
             return;
 
+        int used = 0;
         foreach (string augmentId in ids)
         {
             AugmentData data = augmentDatabase != null ? augmentDatabase.GetById(augmentId) : null;
             if (data == null) continue;
 
-            CardUI card = Instantiate(heldCardPrefab, cardContent);
+            CardUI card;
+            if (used < spawnedCards.Count && spawnedCards[used] != null)
+            {
+                card = spawnedCards[used]; // 풀에 있는 카드를 재사용
+            }
+            else
+            {
+                card = Instantiate(heldCardPrefab, cardContent);
+                if (used < spawnedCards.Count) spawnedCards[used] = card; else spawnedCards.Add(card);
+            }
+            used++;
             card.gameObject.SetActive(true);
             card.SetVisual(data.icon, data.displayName, data.description, data.rarity); // [변경] 등급 전달
             card.SetInteractable(false); // 읽기 전용 표시: 클릭/호버 반응 없음
-            spawnedCards.Add(card.gameObject);
         }
     }
 
-    private void ClearSpawnedCards()
+    // 카드를 파괴하지 않고 숨기기만 한다(다음 갱신 때 재사용).
+    private void HideSpawnedCards()
     {
-        foreach (GameObject go in spawnedCards)
+        for (int i = 0; i < spawnedCards.Count; i++)
         {
-            if (go != null)
-                Destroy(go);
+            if (spawnedCards[i] != null)
+                spawnedCards[i].gameObject.SetActive(false);
         }
-        spawnedCards.Clear();
     }
     #endregion
 }

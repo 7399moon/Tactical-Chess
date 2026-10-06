@@ -13,7 +13,7 @@ public partial class ChessInteractionManager
 {
     #region 승급 대상 클릭 대기 상태
     // 하나의 대기 중인 승급 요청 정보 (팀별로 최대 1개)
-    private class PendingPromotionRequest
+    private struct PendingPromotionRequest // 값 타입: 힙 할당/GC 없이 Dictionary에 저장
     {
         public ChessPieceType targetType;             // 승급 결과로 바뀔 기물 타입
         public ChessPieceType[] requiredSourceTypes;   // 승급 가능한 원본 기물 종류 제한 (null이면 제한 없음)
@@ -107,7 +107,7 @@ public partial class ChessInteractionManager
     // 클릭한 기물이 이번 승급 요청의 유효한 대상인지 검사 (허용 종류 / 킹 제외 / 동일 타입 제외)
     private bool IsValidPromotionTarget(ChessPieces piece, PendingPromotionRequest request)
     {
-        if (piece == null || request == null) return false;
+        if (piece == null) return false;
 
         // 1. 특정 소스 기물 제한이 설정되어 있다면 해당 종류(백/흑 무관)와 일치해야 함 (예: 폰 전용, 나이트/비숍 전용, 룩 전용 등)
         if (request.requiredSourceTypes != null && request.requiredSourceTypes.Length > 0)
@@ -115,9 +115,9 @@ public partial class ChessInteractionManager
             bool matches = false;
             PromotionSourceCategory pieceCategory = GetPromotionCategory(piece.type);
 
-            foreach (ChessPieceType required in request.requiredSourceTypes)
+            for (int i = 0; i < request.requiredSourceTypes.Length; i++)
             {
-                if (pieceCategory == GetPromotionCategory(required))
+                if (pieceCategory == GetPromotionCategory(request.requiredSourceTypes[i]))
                 {
                     matches = true;
                     break;

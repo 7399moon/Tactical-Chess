@@ -83,8 +83,8 @@ public static partial class ChessRules
                                      (x == attacker.currentX - 1 || x == attacker.currentX + 1);
 
                 // [노말 15] 정면 돌격: 정면 1칸 공격 판정
-                bool frontalAttack = HasAugment(attacker.team, "pawn_frontal_capture") &&
-                                    (x == attacker.currentX && y == attacker.currentY + dir);
+                bool frontalAttack = (x == attacker.currentX && y == attacker.currentY + dir) &&
+                                    HasAugment(attacker.team, AugPawnFrontalCapture);
 
                 return diagonalAttack || frontalAttack;
 
@@ -98,8 +98,8 @@ public static partial class ChessRules
                 bool standardAttack = (dxK == 1 && dyK == 2) || (dxK == 2 && dyK == 1);
 
                 // [노말 8] 박차 가하기: 상하좌우 2칸 직선 공격 판정
-                bool chargeAttack = HasAugment(attacker.team, "knight_straight_charge") &&
-                                    ((dxK == 0 && dyK == 2) || (dxK == 2 && dyK == 0));
+                bool chargeAttack = ((dxK == 0 && dyK == 2) || (dxK == 2 && dyK == 0)) &&
+                                    HasAugment(attacker.team, AugKnightStraightCharge);
 
                 return standardAttack || chargeAttack;
 
@@ -157,4 +157,4 @@ public static partial class ChessRules
         return true;
     }
     #endregion
-}
+}

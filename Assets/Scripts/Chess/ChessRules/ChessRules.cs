@@ -13,7 +13,13 @@ public static partial class ChessRules
     public static List<Vector2Int> GetAvailableMoves(ChessPieces[,] board, ChessPieces piece, Vector2Int? enPassantTarget = null)
     {
         var moves = new List<Vector2Int>(16);
+        FillAvailableMoves(board, piece, moves, enPassantTarget);
+        return moves;
+    }
 
+    // 지정한 리스트(moves)에 가상 이동을 채운다. 호출 측이 리스트를 재사용할 수 있게 분리한 내부 구현.
+    private static void FillAvailableMoves(ChessPieces[,] board, ChessPieces piece, List<Vector2Int> moves, Vector2Int? enPassantTarget)
+    {
         switch (piece.type)
         {
             case ChessPieceType.WhitePawn:
@@ -46,34 +52,38 @@ public static partial class ChessRules
                 GetKingMoves(board, piece, moves);
                 break;
         }
-
-        return moves;
     }
 
     // 자신의 킹이 체크되는 자살 수를 배제한 최종 합법 수(Legal Moves)를 반환
+    // 최적화: 가상 이동 리스트 하나를 그대로 재사용해 불법 수를 제자리에서 제거한다(리스트 2~3개 할당 -> 1개).
     public static List<Vector2Int> GetLegalMoves(ChessPieces[,] board, ChessPieces piece, Vector2Int? enPassantTarget = null)
     {
-        var pseudoLegal = GetAvailableMoves(board, piece, enPassantTarget);
-        var legal = new List<Vector2Int>(pseudoLegal.Count);
+        var moves = GetAvailableMoves(board, piece, enPassantTarget);
 
         bool movingKing = IsKing(piece);
         Vector2Int ownKingPos = movingKing ? default : FindKing(board, piece.team);
 
-        foreach (var move in pseudoLegal)
+        int write = 0;
+        for (int read = 0; read < moves.Count; read++)
         {
+            Vector2Int move = moves[read];
             Vector2Int kingPosForCheck = movingKing ? move : ownKingPos;
 
-            if (!WouldLeaveKingInCheck(board, piece, move, enPassantTarget, kingPosForCheck))
-                legal.Add(move);
+            if (WouldLeaveKingInCheck(board, piece, move, enPassantTarget, kingPosForCheck))
+                continue;
+
+            moves[write++] = move;
         }
+        moves.RemoveRange(write, moves.Count - write);
 
         // 2026-10-05 수정: 앙파상 캡처는 도착 칸이 빈 칸이라 기존 FilterArmisticeMoves의
         // "도착 칸에 적이 있는 수만 제거" 판정을 피해가 휴전 협정 중에도 캡처가 가능했다.
         // enPassantTarget을 함께 넘겨 그 좌표로 가는 수도 캡처 수로 식별해 제거한다.
         int armisticeTurns = GameManager.Instance != null ? GameManager.Instance.armisticeTurns : 0;
-        legal = FilterArmisticeMoves(board, piece, legal, armisticeTurns, enPassantTarget);
+        if (armisticeTurns > 0)
+            RemoveArmisticeCapturesInPlace(board, piece, moves, enPassantTarget);
 
-        return legal;
+        return moves;
     }
 
     // 지정된 팀에 합법 수가 남아있는지 검사 (체크메이트/스테일메이트 판별용)
@@ -87,9 +97,39 @@ public static partial class ChessRules
                 if (piece == null || piece.team != team)
                     continue;
 
-                if (GetLegalMoves(board, piece, enPassantTarget).Count > 0)
+                if (HasAnyLegalMove(board, piece, enPassantTarget))
                     return true;
             }
+        }
+
+        return false;
+    }
+
+    // 재사용 버퍼 (HasAnyLegalMove 전용). 유니티 메인 스레드에서만 호출되며 재진입하지 않는다.
+    private static readonly List<Vector2Int> legalScanBuffer = new List<Vector2Int>(32);
+
+    // 한 기물에 합법 수가 "하나라도" 있는지 검사한다.
+    // 최적화: 전체 합법 수 목록을 만들지 않고, 첫 합법 수를 찾는 즉시 true로 조기 종료한다(리스트 할당 없음).
+    private static bool HasAnyLegalMove(ChessPieces[,] board, ChessPieces piece, Vector2Int? enPassantTarget)
+    {
+        legalScanBuffer.Clear();
+        FillAvailableMoves(board, piece, legalScanBuffer, enPassantTarget);
+
+        bool movingKing = IsKing(piece);
+        Vector2Int ownKingPos = movingKing ? default : FindKing(board, piece.team);
+        int armisticeTurns = GameManager.Instance != null ? GameManager.Instance.armisticeTurns : 0;
+
+        for (int i = 0; i < legalScanBuffer.Count; i++)
+        {
+            Vector2Int move = legalScanBuffer[i];
+
+            // 휴전 협정 중 캡처 수는 합법 수에서 제외 (값싼 검사를 먼저 수행)
+            if (armisticeTurns > 0 && IsArmisticeCapture(board, piece, move, enPassantTarget))
+                continue;
+
+            Vector2Int kingPosForCheck = movingKing ? move : ownKingPos;
+            if (!WouldLeaveKingInCheck(board, piece, move, enPassantTarget, kingPosForCheck))
+                return true;
         }
 
         return false;

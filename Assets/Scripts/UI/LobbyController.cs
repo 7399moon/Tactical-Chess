@@ -148,7 +148,7 @@ public class LobbyController : MonoBehaviour
         starting = true;
         MatchSettings.Normalize();
         ChessNetworkSync.Instance.BroadcastLobby();
-        ChessNetworkSync.Instance.RPC_LobbyStart(LobbyState.ResolveHostTeam());
+        ChessNetworkSync.Instance.RPC_LobbyStart(LobbyState.ResolveHostTeam(), UnityEngine.Random.Range(int.MinValue, int.MaxValue));
         BasicSpawner.Instance.LoadGameScene();
         Refresh();
     }

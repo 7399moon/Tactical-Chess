@@ -44,6 +44,15 @@ public partial class PieceSkillManager : MonoBehaviour
     // 연속 워프 체인 도중 차원 암살(적 처치)이 한 번이라도 있었는지 (체인 종료 시 쿨타임 디메리트 판정용)
     private readonly Dictionary<int, bool> warpChainUsedAttack = new Dictionary<int, bool> { { 0, false }, { 1, false } };
 
+    // 2026-10-06 수정: 예전에는 TryUseWarp가 사용할 때마다 그 시점까지의 사용 횟수를 기준으로 계산한
+    // 쿨타임을 cooldowns에 즉시 반영했다. 그런데 연속 워프(유니크2)의 1번째 사용 직후 그 쿨타임이
+    // 곧바로 걸려버려서, TryUseWarp 최상단의 IsOnCooldown 검사에 2번째 사용 자체가 막혀버리는 버그가
+    // 있었다(1번만 이동했는데 이미 쿨타임 4턴이 떠서 사실상 2번째 이동이 불가능). 이제 실제 쿨타임
+    // 반영은 해당 팀의 턴이 끝나는 시점(HandleTurnStarted)까지 미루고, 그 사이에는 "이번 턴에 워프한
+    // 비숍"과 "그 시점까지 계산된 최종 쿨타임 값"만 팀별로 기록해둔다.
+    private readonly Dictionary<int, ChessPieces> pendingWarpBishop = new Dictionary<int, ChessPieces>();
+    private readonly Dictionary<int, int> pendingWarpCooldown = new Dictionary<int, int>();
+
     // GC Alloc 방지용 Key 캐싱 리스트
     private readonly List<ChessPieces> tickCacheKeys = new List<ChessPieces>();
 
@@ -120,6 +129,16 @@ public partial class PieceSkillManager : MonoBehaviour
     // 턴 시작 시 실행: 각 딕셔너리의 턴 수치를 1씩 갱신하고 지휘 예약 건을 처리
     private void HandleTurnStarted(int newTurnTeam)
     {
+        // 2026-10-06 추가: 방금 끝난 팀(endingTeam)이 이번 턴에 비숍 워프를 사용했다면, 턴이 끝나는
+        // 바로 지금 예약해뒀던 최종 쿨타임을 비로소 실제로 적용한다. 다른 스킬들(즉시 반영 방식)과
+        // 동일한 타이밍을 맞추기 위해, 아래 TickDictionary(cooldowns) 호출 전에 반영한다 - 그래야
+        // "사용한 턴 바로 다음 턴이 시작되는 시점부터 쿨타임이 줄어들기 시작"하는 것이 일치한다.
+        int endingTeam = 1 - newTurnTeam;
+        if (pendingWarpBishop.TryGetValue(endingTeam, out ChessPieces warpBishop) && warpBishop != null)
+            cooldowns[warpBishop] = pendingWarpCooldown.GetValueOrDefault(endingTeam);
+        pendingWarpBishop.Remove(endingTeam);
+        pendingWarpCooldown.Remove(endingTeam);
+
         TickDictionary(cooldowns);
 
         // [수정] 위협 상태(immobilized)가 이번 틱에 실제로 만료되는 대상은
@@ -266,6 +285,8 @@ public partial class PieceSkillManager : MonoBehaviour
         warpUsesThisTurn[1] = 0;
         warpChainUsedAttack[0] = false;
         warpChainUsedAttack[1] = false;
+        pendingWarpBishop.Clear();
+        pendingWarpCooldown.Clear();
 
         commandedPieceByTeam.Clear();
         commandMovesLeftByTeam.Clear();

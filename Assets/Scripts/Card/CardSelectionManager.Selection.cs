@@ -432,10 +432,10 @@ public partial class CardSelectionManager
     // 카드 선택 인터랙션 활성화/비활성화
     void SetCardsInteractable(bool value)
     {
-        foreach (CardUI card in cardList)
+        for (int i = 0; i < cardList.Length; i++)
         {
-            if (card != null)
-                card.SetInteractable(value);
+            if (cardList[i] != null)
+                cardList[i].SetInteractable(value);
         }
     }
     #endregion

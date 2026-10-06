@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 // 체스보드의 타일 메쉬 생성, 기물 초기 배치, 프로모션 및 기물 데이터 배열을 관리하는 핵심 클래스.
@@ -30,6 +31,8 @@ public class ChessBoard : MonoBehaviour
 
     #region 내부 상태 필드
     private GameObject[,] tiles;                                    // 8x8 타일 게임오브젝트 배열
+    // 타일 GameObject -> 보드 좌표 역조회 테이블 (호버 시 64칸 선형 탐색 대신 O(1) 조회)
+    private readonly Dictionary<GameObject, Vector2Int> tileIndexLookup = new Dictionary<GameObject, Vector2Int>(TileCountX * TileCountY);
     private ChessPieces[,] chessPieces;                             // 8x8 체스 기물 컴포넌트 배열
     private Vector3 bounds;                                         // 체스보드 원점 기준 오프셋
     private GameObject boardFrameInstance;                          // 생성된 외곽 프레임 인스턴스 (표시/숨김 제어용)
@@ -84,7 +87,10 @@ public class ChessBoard : MonoBehaviour
         tiles = new GameObject[tileCountX, tileCountY];
         for (int x = 0; x < tileCountX; x++)
             for (int y = 0; y < tileCountY; y++)
+            {
                 tiles[x, y] = GenerateSingleTile(tileSize, x, y);
+                tileIndexLookup[tiles[x, y]] = new Vector2Int(x, y);
+            }
     }
 
     // 동적 메쉬(Mesh)를 활용하여 단일 타일 오브젝트 생성
@@ -199,14 +205,16 @@ public class ChessBoard : MonoBehaviour
     {
         if (tiles != null)
         {
-            foreach (var tile in tiles)
-                tile?.SetActive(visible);
+            for (int x = 0; x < TileCountX; x++)
+                for (int y = 0; y < TileCountY; y++)
+                    if (tiles[x, y] != null) tiles[x, y].SetActive(visible);
         }
 
         if (chessPieces != null)
         {
-            foreach (var piece in chessPieces)
-                piece?.gameObject.SetActive(visible);
+            for (int x = 0; x < TileCountX; x++)
+                for (int y = 0; y < TileCountY; y++)
+                    if (chessPieces[x, y] != null) chessPieces[x, y].gameObject.SetActive(visible);
         }
 
         if (boardFrameInstance != null)
@@ -224,10 +232,8 @@ public class ChessBoard : MonoBehaviour
     // Raycast로 감지된 타일 GameObject를 이용해 (x, y) 배열 좌표 역조회
     public Vector2Int LookupTileIndex(GameObject hitInfo)
     {
-        for (int x = 0; x < TileCountX; x++)
-            for (int y = 0; y < TileCountY; y++)
-                if (tiles[x, y] == hitInfo)
-                    return new Vector2Int(x, y);
+        if (hitInfo != null && tileIndexLookup.TryGetValue(hitInfo, out Vector2Int index))
+            return index;
 
         return -Vector2Int.one;
     }
@@ -308,10 +314,13 @@ public class ChessBoard : MonoBehaviour
     {
         if (chessPieces != null)
         {
-            foreach (var piece in chessPieces)
+            for (int x = 0; x < TileCountX; x++)
             {
-                if (piece != null)
-                    Destroy(piece.gameObject);
+                for (int y = 0; y < TileCountY; y++)
+                {
+                    if (chessPieces[x, y] != null)
+                        Destroy(chessPieces[x, y].gameObject);
+                }
             }
         }
 

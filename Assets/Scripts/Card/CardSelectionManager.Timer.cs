@@ -8,6 +8,7 @@ public partial class CardSelectionManager
 {
     private bool selectTimerArmed;
     private float selectRemaining;
+    private readonly System.Collections.Generic.List<CardUI> autoPickBuffer = new System.Collections.Generic.List<CardUI>(4); // 자동 선택 후보 재사용 버퍼
 
     private void Update()
     {
@@ -39,10 +40,13 @@ public partial class CardSelectionManager
         GameManager.Instance?.SetSelectionBar(-1f);
 
         // 현재 화면에 떠 있는 카드 중 무작위 1장을 자동 선택한다.
-        var candidates = new System.Collections.Generic.List<CardUI>();
-        foreach (var card in cardList)
-            if (card != null && card.gameObject.activeSelf) candidates.Add(card);
-        if (candidates.Count > 0)
-            OnCardSelected(candidates[Random.Range(0, candidates.Count)]);
+        autoPickBuffer.Clear();
+        for (int i = 0; i < cardList.Length; i++)
+        {
+            CardUI card = cardList[i];
+            if (card != null && card.gameObject.activeSelf) autoPickBuffer.Add(card);
+        }
+        if (autoPickBuffer.Count > 0)
+            OnCardSelected(autoPickBuffer[Random.Range(0, autoPickBuffer.Count)]);
     }
 }

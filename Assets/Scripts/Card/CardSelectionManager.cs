@@ -283,9 +283,9 @@ public partial class CardSelectionManager : MonoBehaviour
         // RPC로 양쪽에서 동일하게 실행되므로). 대상 팀 전체에 대해 ShowCardSelection을 호출하지만,
         // 실제로 패널이 뜨는 것은 IsInteractiveForTeam(team)이 true인 자기 팀 화면뿐이다 - 즉 각
         // 클라이언트는 자기 팀 오프너만 독립적으로 열게 된다(동시 진행, 순차 아님).
-        foreach (int team in pendingAugmentTeams)
+        for (int i = 0; i < pendingAugmentTeams.Count; i++)
         {
-            ShowCardSelection(promotion: false, team: team);
+            ShowCardSelection(promotion: false, team: pendingAugmentTeams[i]);
         }
     }
 

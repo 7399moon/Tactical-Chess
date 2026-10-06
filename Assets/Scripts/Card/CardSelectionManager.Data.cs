@@ -125,11 +125,15 @@ public partial class CardSelectionManager
     // 하나를 무작위로 고르고, 그것도 없으면 그나마 가장 많이 남은 단일 등급(3장 이하라도)을
     // 사용한다 - 그래도 서로 다른 등급을 한 오퍼에 섞지는 않는다. 제공 가능한 카드가 전혀
     // 없으면 null을 반환한다.
+    // Enum.GetValues는 호출할 때마다 배열을 새로 만들고 박싱하므로, 한 번만 만들어 재사용한다.
+    private static readonly AugmentRarity[] AllRarities = (AugmentRarity[])Enum.GetValues(typeof(AugmentRarity));
+
     private AugmentRarity? PickFallbackRarityExcluding(AugmentRarity excluded)
     {
         var remainingByRarity = new Dictionary<AugmentRarity, int>();
-        foreach (AugmentRarity rarity in Enum.GetValues(typeof(AugmentRarity)))
+        for (int ri = 0; ri < AllRarities.Length; ri++)
         {
+            AugmentRarity rarity = AllRarities[ri];
             if (!IsRarityAllowed(rarity) || rarity == excluded) continue;
 
             remainingByRarity[rarity] = augmentDatabase.allAugments.Count(
@@ -152,15 +156,20 @@ public partial class CardSelectionManager
     private AugmentRarity GetCheckpointRarity()
     {
         var allowed = new List<AugmentRarity>();
-        foreach (AugmentRarity rarity in Enum.GetValues(typeof(AugmentRarity)))
+        for (int ri = 0; ri < AllRarities.Length; ri++)
         {
-            if (IsRarityAllowed(rarity))
-                allowed.Add(rarity);
+            if (IsRarityAllowed(AllRarities[ri]))
+                allowed.Add(AllRarities[ri]);
         }
 
         if (allowed.Count == 0) return AugmentRarity.Normal;
 
-        int seed = GameManager.Instance != null ? GameManager.Instance.TurnCount : 0;
+        // 2026-10-06 수정: 예전에는 시드가 GameManager.TurnCount뿐이었다. 체크포인트 시점의 TurnCount는
+        // 모든 대전에서 항상 10/20/30...으로 고정되므로, 결과적으로 "매 게임 첫 증강(10턴째)이 항상 같은
+        // 등급(레전더리/"플래티넘")으로 고정되어 보이는" 버그였다. MatchSession.AugmentSeed(매치마다
+        // 새로 뽑혀 네트워크 대전 중에도 양쪽 클라이언트에 동일하게 전파되는 값)를 함께 섞어, 등급 결정이
+        // 매치마다 달라지면서도 같은 매치 안 두 클라이언트끼리는 여전히 일치하도록 한다.
+        int seed = unchecked(MatchSession.AugmentSeed + (GameManager.Instance != null ? GameManager.Instance.TurnCount : 0));
         var rng = new System.Random(seed);
         int index = rng.Next(allowed.Count);
         return allowed[index];

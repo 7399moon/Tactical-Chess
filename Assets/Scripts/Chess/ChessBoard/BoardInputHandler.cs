@@ -21,6 +21,10 @@ public class BoardInputHandler : MonoBehaviour
     private Camera currentCamera;
     private Vector2Int currentHover = -Vector2Int.one;
     private GameObject currentHoveredPiece;
+
+    // 마우스가 같은 오브젝트 위에 머무는 동안 GetComponentInParent를 매 프레임 반복하지 않도록 캐싱
+    private Transform cachedHitTransform;
+    private ChessPieces cachedHitPiece;
     #endregion
 
     #region 외부 공개 프로퍼티
@@ -50,7 +54,7 @@ public class BoardInputHandler : MonoBehaviour
         Ray ray = currentCamera.ScreenPointToRay(Input.mousePosition);
         if (Physics.Raycast(ray, out RaycastHit hitInfo, 100f, hoverableMask))
         {
-            ChessPieces hitPiece = hitInfo.transform.GetComponentInParent<ChessPieces>();
+            ChessPieces hitPiece = ResolveHitPiece(hitInfo.transform);
 
             // 1. 기물 위에 마우스가 있는 경우
             if (hitPiece != null)
@@ -80,6 +84,17 @@ public class BoardInputHandler : MonoBehaviour
     #endregion
 
     #region 호버 상태 관리
+    // 맞은 Transform이 바뀌었을 때만 부모 기물 컴포넌트를 다시 조회한다.
+    private ChessPieces ResolveHitPiece(Transform hit)
+    {
+        if (hit != cachedHitTransform)
+        {
+            cachedHitTransform = hit;
+            cachedHitPiece = hit.GetComponentInParent<ChessPieces>();
+        }
+        return cachedHitPiece;
+    }
+
     // 마우스 호버 상태인 타일 위치를 갱신하고 타일 하이라이트를 업데이트
     private void UpdateTileMouseHover(Vector2Int hitPosition)
     {

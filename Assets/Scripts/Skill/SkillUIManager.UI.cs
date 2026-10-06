@@ -166,7 +166,43 @@ public partial class SkillUIManager
             (currentSelected.type == ChessPieceType.WhiteBishop || currentSelected.type == ChessPieceType.BlackBishop) &&
             currentSelected.team == actingTeam;
 
-        return isOwnBishop ? currentSelected : FindPiece(ChessPieceType.WhiteBishop, actingTeam);
+        return isOwnBishop ? currentSelected : FindUsableBishop(actingTeam);
+    }
+
+    // 2026-10-06 수정: 비숍은 팀당 2기(승급 시 더 늘어날 수 있음)인데, 아무 비숍도 선택되어 있지
+    // 않은 상태에서 비숍 스킬 버튼을 누르면 기존에는 FindPiece가 보드를 좌표 순으로 스캔해 "처음
+    // 찾은 비숍"(항상 더 작은 x좌표, 즉 "왼쪽" 비숍)만 반환했다. 그 결과 왼쪽 비숍이 쿨타임 중이거나
+    // 인접 칸이 모두 막혀 있어도 그대로 왼쪽 비숍 기준으로 워프 범위를 계산해, 실제로는 당장 워프
+    // 가능한 오른쪽 비숍이 있어도 범위가 아예 비어 보이고(워프 불가능한 비숍이 선택된 상태) 클릭해도
+    // 아무 일도 일어나지 않는 버그가 있었다(백팀 기준 "오른쪽 비숍은 워프 자체가 불가능" 신고의 원인).
+    // 지금은 쿨타임 중이 아니고 실제로 워프 가능한 칸이 하나라도 있는 비숍을 우선 찾고, 그런 비숍이
+    // 없으면(둘 다 사용 불가, 또는 아직 둘 다 사용 가능) 기존처럼 첫 번째로 찾은 비숍으로 폴백한다.
+    private ChessPieces FindUsableBishop(int team)
+    {
+        ChessBoard board = FindAnyObjectByType<ChessBoard>();
+        if (board == null || board.Pieces == null) return null;
+
+        ChessPieceType resolvedType = ChessPieceTeamUtil.ResolveForTeam(ChessPieceType.WhiteBishop, team);
+        ChessPieces[,] boardPieces = board.Pieces;
+        ChessPieces firstFound = null;
+
+        for (int x = 0; x < ChessBoard.TileCountX; x++)
+        {
+            for (int y = 0; y < ChessBoard.TileCountY; y++)
+            {
+                ChessPieces p = boardPieces[x, y];
+                if (p == null || p.type != resolvedType || p.team != team) continue;
+
+                if (firstFound == null) firstFound = p;
+
+                bool blocked = PieceSkillManager.Instance != null
+                    && (PieceSkillManager.Instance.IsOnCooldown(p) || PieceSkillManager.Instance.IsImmobilized(p));
+                if (!blocked && GetWarpTiles(p, board).Count > 0)
+                    return p;
+            }
+        }
+
+        return firstFound;
     }
 
     // 체스판 내에서 지정한 종류(백색 기준 타입)를 team 색상으로 환산해 검색

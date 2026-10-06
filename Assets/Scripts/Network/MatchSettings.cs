@@ -114,9 +114,19 @@ public static class MatchSession
     public static bool Pending;      // GameStartController가 아직 소비하지 않은 시작 요청
     public static int LocalTeam = -1;
 
-    public static void Begin(int hostTeam, bool isHost)
+    // 2026-10-06 추가: 증강 체크포인트 등급(CardSelectionManager.GetCheckpointRarity)을 결정하는 매치별
+    // 난수 시드. 기존에는 이 시드가 없어 GameManager.TurnCount(체크포인트마다 항상 10/20/30...으로
+    // 고정)만으로 등급을 뽑았기 때문에, 매 게임 첫 증강(10턴째)이 모든 대전에서 항상 같은 등급(레전더리/
+    // "플래티넘")으로 고정되어 보이는 버그가 있었다. 네트워크 대전 중에는 양쪽 클라이언트가 여전히
+    // 같은 등급을 봐야 하므로, 호스트(로비 시작) 또는 재시작을 누른 쪽이 한 번만 뽑아 RPC로 전파한
+    // 값을 여기 저장해 양쪽이 공유한다. 정적 필드 기본값 자체도 무작위로 초기화해, 로비를 거치지 않는
+    // 로컬 테스트 모드의 첫 매치에서도 고정값(0)으로 시작하지 않도록 한다.
+    public static int AugmentSeed = UnityEngine.Random.Range(int.MinValue, int.MaxValue);
+
+    public static void Begin(int hostTeam, bool isHost, int augmentSeed)
     {
         LocalTeam = isHost ? hostTeam : 1 - hostTeam;
+        AugmentSeed = augmentSeed;
         PlayerProfile.SetTeamNickname(hostTeam, LobbyState.HostNick);
         PlayerProfile.SetTeamNickname(1 - hostTeam, LobbyState.GuestNick);
         InMatch = true;
@@ -125,6 +135,6 @@ public static class MatchSession
 
     public static void Reset()
     {
-        InMatch = false; Pending = false; LocalTeam = -1;
+        InMatch = false; Pending = false; LocalTeam = -1; AugmentSeed = 0;
     }
 }

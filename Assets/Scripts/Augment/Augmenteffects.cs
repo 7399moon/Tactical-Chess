@@ -141,8 +141,9 @@ public class Augmenteffects : MonoBehaviour
         if (found.Count < count)
             return false;
 
-        foreach (Vector2Int pos in found)
+        for (int fi = 0; fi < found.Count; fi++)
         {
+            Vector2Int pos = found[fi];
             ChessPieces piece = board.GetPieceAt(pos.x, pos.y);
             if (piece == null) continue;
 

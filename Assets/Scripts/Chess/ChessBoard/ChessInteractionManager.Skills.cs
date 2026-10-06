@@ -316,7 +316,7 @@ public partial class ChessInteractionManager
             piece = SkillUIManager.Instance.MovedPieceThisTurn;
 
         if (piece != null)
-            tileHighlighter.HighlightCustomTiles(SkillUIManager.Instance.GetSurroundingTiles(piece));
+            tileHighlighter.HighlightCustomTiles(SkillUIManager.Instance.GetSurroundingTiles(piece, skillType));
     }
     #endregion
 

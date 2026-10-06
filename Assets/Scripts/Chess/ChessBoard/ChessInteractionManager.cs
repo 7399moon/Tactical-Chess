@@ -211,8 +211,9 @@ public partial class ChessInteractionManager : MonoBehaviour
         availableMoves.Clear();
         availableMoves.AddRange(ChessRules.GetLegalMoves(board.Pieces, piece, enPassantTarget));
 
-        foreach (Vector2Int move in availableMoves)
+        for (int i = 0; i < availableMoves.Count; i++)
         {
+            Vector2Int move = availableMoves[i];
             ChessPieces target = board.GetPieceAt(move.x, move.y);
             bool hasEnemy = target != null && target.team != piece.team;
 
@@ -231,8 +232,9 @@ public partial class ChessInteractionManager : MonoBehaviour
     // 현재 선택된 기물의 하이라이트를 제거하고 선택 상태를 해제
     public void DeselectPiece()
     {
-        foreach (Vector2Int move in availableMoves)
+        for (int i = 0; i < availableMoves.Count; i++)
         {
+            Vector2Int move = availableMoves[i];
             tileHighlighter.SetHighlightState(move.x, move.y, BoardTileHighlighter.TileHighlightState.None);
             tileHighlighter.RefreshTileColor(move, inputHandler.CurrentHover);
         }

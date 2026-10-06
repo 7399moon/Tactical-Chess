@@ -64,8 +64,11 @@ public partial class SkillUIManager
             (currentSelected.type == ChessPieceType.WhiteBishop || currentSelected.type == ChessPieceType.BlackBishop) &&
             currentSelected.team == actingTeam;
 
+        // 2026-10-06 수정: FindPiece(첫 번째로 찾은 비숍, 즉 항상 "왼쪽" 비숍)로 폴백하면 그 비숍이
+        // 쿨타임 중이거나 워프 가능한 칸이 없어도 그대로 선택되어 버려, 실제로는 사용 가능한 오른쪽
+        // 비숍이 있어도 선택될 수 없는 버그가 있었다(SkillUIManager.UI.cs의 FindUsableBishop 주석 참고).
         if (!isOwnBishop)
-            currentSelected = FindPiece(ChessPieceType.WhiteBishop, actingTeam);
+            currentSelected = FindUsableBishop(actingTeam);
 
         if (currentSelected == null)
         {
@@ -189,19 +192,38 @@ public partial class SkillUIManager
         RefreshUIState();
     }
 
-    // 기물 주변 8방향 인접 타일 반환
-    public List<Vector2Int> GetSurroundingTiles(ChessPieces piece)
+    // 기물 주변 인접 타일 반환 (나이트 위협/룩 쉴드 스킬의 증강 범위 보너스를 반영)
+    // 2026-10-06 수정: 예전에는 항상 고정된 8방향 인접 타일만 반환해서, 레어1(위협 확장)/레어6(쉴드
+    // 확장) 증강으로 TryUseThreat/TryUseShield의 실제 판정 범위(range = 1 + bonus, 체비셰프 거리)가
+    // 넓어져도 화면에는 여전히 기본 1칸 범위만 하이라이트되는 표시 버그가 있었다(스킬 자체는 확장된
+    // 범위로 정상 작동하지만, 플레이어는 넓어진 범위를 볼 수 없어 혼란/오사용을 유발). 실제 판정과
+    // 동일한 공식으로 범위를 계산해 하이라이트에 반영한다.
+    public List<Vector2Int> GetSurroundingTiles(ChessPieces piece, PendingSkillType skillType = PendingSkillType.None)
     {
         List<Vector2Int> tiles = new List<Vector2Int>();
         if (piece == null) return tiles;
 
-        for (int i = 0; i < SurroundingOffsets.Length; i++)
+        int range = 1;
+        if (AugmentManager.Instance != null)
         {
-            int x = piece.currentX + SurroundingOffsets[i].x;
-            int y = piece.currentY + SurroundingOffsets[i].y;
+            if (skillType == PendingSkillType.Knight)
+                range += AugmentManager.Instance.GetKnightThreatRangeBonus(piece.team);
+            else if (skillType == PendingSkillType.Rook)
+                range += AugmentManager.Instance.GetRookShieldRangeBonus(piece.team);
+        }
 
-            if (x >= 0 && x < ChessBoard.TileCountX && y >= 0 && y < ChessBoard.TileCountY)
-                tiles.Add(new Vector2Int(x, y));
+        for (int dx = -range; dx <= range; dx++)
+        {
+            for (int dy = -range; dy <= range; dy++)
+            {
+                if (dx == 0 && dy == 0) continue;
+
+                int x = piece.currentX + dx;
+                int y = piece.currentY + dy;
+
+                if (x >= 0 && x < ChessBoard.TileCountX && y >= 0 && y < ChessBoard.TileCountY)
+                    tiles.Add(new Vector2Int(x, y));
+            }
         }
 
         return tiles;

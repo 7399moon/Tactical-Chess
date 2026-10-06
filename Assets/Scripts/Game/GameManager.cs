@@ -22,6 +22,7 @@ public class GameManager : MonoBehaviour
     #region 내부 상태 필드
     private int currentTurn = 0;            // 0 = White / 1 = Black
     private int turnCount = 1;              // 체스 게임 전체 진행 턴 수
+    private float invTurnLimit = 1f;         // 1 / 턴 제한 시간 (매 프레임 나눗셈 대신 곱셈으로 정규화)
     private float currentTurnTime;          // 현재 턴의 남은 제한 시간
     private bool hasMovedThisTurn = false;  // 현재 턴 내 기물 이동 완료 여부
     private bool isPaused = false;          // 증강 선택 UI 오픈 등의 사유로 타이머 일시정지 여부
@@ -126,6 +127,7 @@ public class GameManager : MonoBehaviour
     {
         currentTurn = team;
         currentTurnTime = TurnLimitSeconds;
+        invTurnLimit = currentTurnTime > 0f ? 1f / currentTurnTime : 1f;
         hasMovedThisTurn = false;
 
         ResetAllPiecesTurnState();
@@ -250,20 +252,24 @@ public class GameManager : MonoBehaviour
         if (fill == null) return;
 
         if (selectionBarValue >= 0f) return; // 증강 선택 시간 표시 중에는 턴 타이머가 바를 건드리지 않는다
-        DrawBar(currentTurnTime / TurnLimitSeconds);
+        DrawBar(currentTurnTime * invTurnLimit);
     }
 
     // 세로 바 Fill 갱신 + 물결 위치. [변경] 새 시간바 아트(주황 액체)를 쓰므로 평소엔 원본 색을 유지하고,
     // 남은 시간이 25% 이하일 때만 붉게 물들인다.
+    private const float LowTimeThreshold = 0.25f;                       // 이 비율 이하일 때 붉게 물든다
+    private const float InvLowTimeThreshold = 1f / LowTimeThreshold;    // 나눗셈 대신 곱셈용 역수(컴파일 타임 상수)
+    private static readonly Color LowTimeColor = new Color(1f, 0.35f, 0.3f, 1f);
+
     private void DrawBar(float normalizedTime)
     {
         if (fill == null) return;
         normalizedTime = Mathf.Clamp01(normalizedTime);
         fill.fillAmount = normalizedTime;
 
-        fill.color = normalizedTime > 0.25f
+        fill.color = normalizedTime > LowTimeThreshold
             ? Color.white
-            : Color.Lerp(new Color(1f, 0.35f, 0.3f, 1f), Color.white, normalizedTime / 0.25f);
+            : Color.Lerp(LowTimeColor, Color.white, normalizedTime * InvLowTimeThreshold);
 
         if (fillWave != null)
         {
@@ -285,6 +291,7 @@ public class GameManager : MonoBehaviour
 
     // 증강 선택 제한 시간 표시용 오버라이드 값(0~1). 음수면 사용 안 함.
     private float selectionBarValue = -1f;
+    private Image[] turnBarImages;
 
     // CardSelectionManager가 증강 선택 남은 시간을 세로 바에 표시/해제한다 (normalized < 0 이면 해제).
     public void SetSelectionBar(float normalized)
@@ -300,8 +307,10 @@ public class GameManager : MonoBehaviour
     {
         if (turnTimeBar == null) return;
         bool visible = MatchSettings.TurnTimeLimit || selectionBarValue >= 0f;
-        foreach (var img in turnTimeBar.GetComponentsInChildren<Image>(true))
-            img.enabled = visible;
+        if (turnBarImages == null)
+            turnBarImages = turnTimeBar.GetComponentsInChildren<Image>(true); // 한 번만 조회해 캐싱(매번 배열 할당 방지)
+        for (int i = 0; i < turnBarImages.Length; i++)
+            if (turnBarImages[i] != null) turnBarImages[i].enabled = visible;
         if (visible) UpdateTurnUI();
     }
     #endregion

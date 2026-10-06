@@ -6,6 +6,17 @@ public static partial class ChessRules
 {
     private const int BoardSize = 8;
 
+    #region 증강 ID 상수 (const 문자열: 컴파일 타임 상수라 런타임 문자열 생성/GC가 없다)
+    private const string AugBishopPassThrough = "bishop_pass_through";
+    private const string AugRookPassThrough = "rook_pass_through";
+    private const string AugKnightStraightCharge = "knight_straight_charge";
+    private const string AugKingEmergencySwap = "king_emergency_swap";
+    private const string AugPawnTripleStep = "pawn_triple_step";
+    private const string AugPawnFrontalCapture = "pawn_frontal_capture";
+    private const string AugPawnSideStep = "pawn_side_step";
+    private const string AugPawnAwakening = "pawn_awakening";
+    #endregion
+
     #region 방향 벡터 상수
     // 룩/퀸의 직선 이동 방향
     private static readonly Vector2Int[] StraightDirections =
@@ -28,6 +39,13 @@ public static partial class ChessRules
         new Vector2Int(2, -1), new Vector2Int(1, -2),
         new Vector2Int(-1, -2), new Vector2Int(-2, -1),
         new Vector2Int(-2, 1), new Vector2Int(-1, 2)
+    };
+
+    // [노말8 박차 가하기] 나이트의 상하좌우 2칸 직선 이동 (호출마다 배열을 새로 만들지 않도록 static 보관)
+    private static readonly Vector2Int[] KnightStraightOffsets =
+    {
+        new Vector2Int(0, 2), new Vector2Int(0, -2),
+        new Vector2Int(2, 0), new Vector2Int(-2, 0)
     };
 
     // 킹 주변 8방향 (긴급 교체 대상 탐색용으로 직선+대각선 합쳐서 따로 보관)
@@ -63,9 +81,9 @@ public static partial class ChessRules
         // 노말4/5: 관통 활보(비숍)·관통 돌격(룩) - 이동 경로의 아군 기물 1개까지 통과 가능
         bool allowPassThrough = false;
         if (piece.type == ChessPieceType.WhiteBishop || piece.type == ChessPieceType.BlackBishop)
-            allowPassThrough = HasAugment(piece.team, "bishop_pass_through");
+            allowPassThrough = HasAugment(piece.team, AugBishopPassThrough);
         else if (piece.type == ChessPieceType.WhiteRook || piece.type == ChessPieceType.BlackRook)
-            allowPassThrough = HasAugment(piece.team, "rook_pass_through");
+            allowPassThrough = HasAugment(piece.team, AugRookPassThrough);
 
         if (straight) AddSlidingDirections(board, piece, moves, StraightDirections, allowPassThrough);
         if (diagonal) AddSlidingDirections(board, piece, moves, DiagonalDirections, allowPassThrough);
@@ -74,8 +92,9 @@ public static partial class ChessRules
     // 지정된 방향으로 한 칸씩 탐색하며 빈 칸 이동 및 적 기물 캡처 경로 추가
     private static void AddSlidingDirections(ChessPieces[,] board, ChessPieces piece, List<Vector2Int> moves, Vector2Int[] directions, bool allowPassThrough = false)
     {
-        foreach (Vector2Int dir in directions)
+        for (int d = 0; d < directions.Length; d++)
         {
+            Vector2Int dir = directions[d];
             int x = piece.currentX + dir.x;
             int y = piece.currentY + dir.y;
             bool hasPassedAlly = false; // 이 방향에서 이미 아군 하나를 통과했는지
@@ -111,8 +130,9 @@ public static partial class ChessRules
     // 나이트의 8가지 L자 이동 경로 탐색
     private static void GetKnightMoves(ChessPieces[,] board, ChessPieces piece, List<Vector2Int> moves)
     {
-        foreach (Vector2Int offset in KnightOffsets)
+        for (int i = 0; i < KnightOffsets.Length; i++)
         {
+            Vector2Int offset = KnightOffsets[i];
             int x = piece.currentX + offset.x;
             int y = piece.currentY + offset.y;
 
@@ -125,16 +145,11 @@ public static partial class ChessRules
         }
 
         // 노말8 [박차 가하기]: 상하좌우 2칸 직선 이동 추가 (4방향)
-        if (HasAugment(piece.team, "knight_straight_charge"))
+        if (HasAugment(piece.team, AugKnightStraightCharge))
         {
-            Vector2Int[] straightTwoSteps =
+            for (int i = 0; i < KnightStraightOffsets.Length; i++)
             {
-                new Vector2Int(0, 2), new Vector2Int(0, -2),
-                new Vector2Int(2, 0), new Vector2Int(-2, 0)
-            };
-
-            foreach (Vector2Int offset in straightTwoSteps)
-            {
+                Vector2Int offset = KnightStraightOffsets[i];
                 int targetX = piece.currentX + offset.x;
                 int targetY = piece.currentY + offset.y;
 
@@ -160,10 +175,11 @@ public static partial class ChessRules
 
         // 노말12 [긴급 교체]: 체크 상태일 때 1칸 이내 아군 기물과 위치 교환 가능
         bool hasSwapUsesLeft = AugmentManager.Instance != null && AugmentManager.Instance.GetEmergencySwapUsesLeft(piece.team) > 0;
-        if (HasAugment(piece.team, "king_emergency_swap") && hasSwapUsesLeft && IsKingInCheck(board, piece.team))
+        if (HasAugment(piece.team, AugKingEmergencySwap) && hasSwapUsesLeft && IsKingInCheck(board, piece.team))
         {
-            foreach (Vector2Int dir in AdjacentDirections)
+            for (int i = 0; i < AdjacentDirections.Length; i++)
             {
+                Vector2Int dir = AdjacentDirections[i];
                 int targetX = piece.currentX + dir.x;
                 int targetY = piece.currentY + dir.y;
 
@@ -187,8 +203,9 @@ public static partial class ChessRules
     // 킹 지정 방향 및 최대 수치(maxDistance)까지 이동 탐색
     private static void AddKingDirectionalMoves(ChessPieces[,] board, ChessPieces piece, List<Vector2Int> moves, Vector2Int[] directions, int maxDistance)
     {
-        foreach (Vector2Int dir in directions)
+        for (int d = 0; d < directions.Length; d++)
         {
+            Vector2Int dir = directions[d];
             for (int step = 1; step <= maxDistance; step++)
             {
                 int x = piece.currentX + dir.x * step;
@@ -272,7 +289,7 @@ public static partial class ChessRules
                     moves.Add(new Vector2Int(x, doubleY));
 
                     // 노말2 [삼보 전진]: 첫 이동시 세칸 이동 가능
-                    if (HasAugment(piece.team, "pawn_triple_step"))
+                    if (HasAugment(piece.team, AugPawnTripleStep))
                     {
                         int tripleY = piece.currentY + direction * 3;
                         if (IsInBoard(x, tripleY) && board[x, tripleY] == null)
@@ -281,7 +298,7 @@ public static partial class ChessRules
                 }
             }
             // 노말15 [정면 돌격]: 정면 적 캡처 허용
-            else if (frontPiece.team != piece.team && HasAugment(piece.team, "pawn_frontal_capture"))
+            else if (frontPiece.team != piece.team && HasAugment(piece.team, AugPawnFrontalCapture))
             {
                 moves.Add(new Vector2Int(x, y));
             }
@@ -307,7 +324,7 @@ public static partial class ChessRules
         }
 
         // 3. 노말1 [측면 돌파]: 좌우 1칸 빈 공간 이동 허용
-        if (HasAugment(piece.team, "pawn_side_step"))
+        if (HasAugment(piece.team, AugPawnSideStep))
         {
             for (int i = 0; i < 2; i++)
             {
@@ -320,7 +337,7 @@ public static partial class ChessRules
         }
 
         // 4. 노말7 [폰의 각성]: 특정 랭크 도달 시 비어있는 대각선 칸 전진 이동 허용
-        if (HasAugment(piece.team, "pawn_awakening"))
+        if (HasAugment(piece.team, AugPawnAwakening))
         {
             int awakenRank = piece.team == 0 ? 5 : 2;
 
@@ -349,21 +366,35 @@ public static partial class ChessRules
         if (armisticeTurns <= 0)
             return rawMoves;
 
-        List<Vector2Int> validMoves = new List<Vector2Int>();
+        List<Vector2Int> validMoves = new List<Vector2Int>(rawMoves.Count);
 
-        foreach (Vector2Int move in rawMoves)
+        for (int i = 0; i < rawMoves.Count; i++)
         {
-            ChessPieces target = board[move.x, move.y];
-            bool isEnPassantCapture = enPassantTarget.HasValue && move == enPassantTarget.Value && IsPawn(piece);
-
             // 이동 타깃 칸이 빈 칸이고, 앙파상 캡처도 아닌 경우에만 승인
-            if (target == null && !isEnPassantCapture)
-            {
-                validMoves.Add(move);
-            }
+            if (!IsArmisticeCapture(board, piece, rawMoves[i], enPassantTarget))
+                validMoves.Add(rawMoves[i]);
         }
 
         return validMoves;
+    }
+
+    // 휴전 협정 중 금지되는 "캡처 수"인지 판정 (도착 칸에 기물이 있거나 앙파상 도착 좌표인 경우)
+    private static bool IsArmisticeCapture(ChessPieces[,] board, ChessPieces piece, Vector2Int move, Vector2Int? enPassantTarget)
+    {
+        bool isEnPassantCapture = enPassantTarget.HasValue && move == enPassantTarget.Value && IsPawn(piece);
+        return board[move.x, move.y] != null || isEnPassantCapture;
+    }
+
+    // 새 리스트를 만들지 않고 moves 안에서 직접 캡처 수를 제거한다 (GetLegalMoves 전용, GC 없음)
+    private static void RemoveArmisticeCapturesInPlace(ChessPieces[,] board, ChessPieces piece, List<Vector2Int> moves, Vector2Int? enPassantTarget)
+    {
+        int write = 0;
+        for (int read = 0; read < moves.Count; read++)
+        {
+            if (IsArmisticeCapture(board, piece, moves[read], enPassantTarget)) continue;
+            moves[write++] = moves[read];
+        }
+        moves.RemoveRange(write, moves.Count - write);
     }
     #endregion
 }

@@ -116,9 +116,13 @@ public class ChessNetworkSync : NetworkBehaviour
     // 그대로 멈춰있고 보드/턴/증강 상태가 서로 어긋나게 되므로, 반드시 양쪽이 동시에 동일한 리셋을
     // 수행하도록 RPC로 중계한다(기존 카드 선택 RPC들과 동일한 패턴 - 발신자 자신도 RpcTargets.All에
     // 포함되어 함께 리셋됨).
+    // augmentSeed: 재시작을 누른 쪽이 한 번 뽑아 전파하는 새 매치별 증강 등급 난수 시드. 이 값을 먼저
+    // MatchSession에 반영한 뒤 StartMatch()를 호출해야, 재시작한 새 매치의 첫 증강 체크포인트도
+    // 이전 매치와 같은 등급으로 고정되지 않는다(MatchSession.AugmentSeed 주석 참고).
     [Rpc(RpcSources.All, RpcTargets.All)]
-    public void RPC_RelayRestartMatch()
+    public void RPC_RelayRestartMatch(int augmentSeed)
     {
+        MatchSession.AugmentSeed = augmentSeed;
         GameStartController.Instance?.StartMatch();
     }
     #endregion
@@ -170,11 +174,14 @@ public class ChessNetworkSync : NetworkBehaviour
 
     // 호스트 -> 모두: 게임 시작. 호스트가 정한 호스트 팀(0/1)을 받아 각자 자기 팀/닉네임을 확정한다.
     // 이 RPC 이후 호스트가 GameScene을 Additive로 로드하고, GameStartController가 MatchSession을 소비한다.
+    // augmentSeed: 호스트가 한 번 뽑아 함께 전파하는 매치별 증강 등급 난수 시드(MatchSession.AugmentSeed
+    // 주석 참고). RPC 파라미터는 호출한 쪽에서 계산되어 그대로 전송되므로, 수신하는 양쪽 클라이언트가
+    // 별도 조율 없이도 항상 같은 값을 받는다.
     [Rpc(RpcSources.All, RpcTargets.All)]
-    public void RPC_LobbyStart(int hostTeam)
+    public void RPC_LobbyStart(int hostTeam, int augmentSeed)
     {
         if (MatchSession.InMatch) return;
-        MatchSession.Begin(hostTeam, Runner.IsServer);
+        MatchSession.Begin(hostTeam, Runner.IsServer, augmentSeed);
     }
     #endregion
 }
