@@ -4,41 +4,70 @@ using UnityEngine;
 // 로비에서 호스트가 정한 "이번 판의 규칙". 호스트가 스냅샷 RPC로 모든 피어에 동일하게 전파하고,
 // GameScene의 매니저들(GameManager/CardSelectionManager/SkillUIManager/QueenSkill 등)이 직접 읽는다.
 // 로비를 거치지 않고 GameScene만 단독 실행하는 경우에는 기본값(= 기존 동작)이 그대로 적용된다.
+// 게임 모드. 로비 드롭다운에서 호스트가 고른다. (네트워크로는 int로 전파하므로 값 순서를 바꾸지 말 것)
+public enum MatchMode
+{
+    Default = 0,       // 기본: 스킬/증강/우노 없는 순수 체스
+    Skill = 1,         // 스킬 모드: 스킬만 추가
+    AugmentSkill = 2,  // 증강(+스킬) 모드: 증강과 스킬 추가
+    Uno = 3,           // 우노 모드: 우노 카드가 턴 행동을 결정 (스킬/증강 없음)
+}
+
 public static class MatchSettings
 {
     public const int MinAugments = 3;
     public const int MaxAugmentsLimit = 10;
     public const float AugmentSelectSeconds = 30f; // 증강 선택 제한 시간 (고정)
 
-    public static bool AugmentEnabled = true;     // 증강 시스템
+    public const int MinUnoStartHand = UnoRules.MinStartingHand, MaxUnoStartHand = UnoRules.MaxStartingHand;
+    public const int MinUnoMaxHand = UnoRules.MinLoseHand, MaxUnoMaxHand = UnoRules.MaxLoseHand;
+
+    // 모드가 유일한 원본이다. AugmentEnabled/SkillEnabled는 Normalize()가 모드에서 파생해 채우는 값이며,
+    // 기존 매니저들이 읽는 이름을 그대로 유지하기 위해 필드로 남겨 두었다 (직접 쓰지 말고 Mode를 바꿀 것).
+    public static MatchMode Mode = MatchMode.AugmentSkill;
+    public static bool AugmentEnabled = true;     // 증강 시스템 (파생)
     public static int MaxAugments = 6;            // 팀당 최대 보유 증강 수 (3~10)
     public static bool AugmentTimeLimit = false;  // 증강 선택 시간 제한
-    public static bool SkillEnabled = true;       // 스킬 시스템 (OFF면 퀸 아우라도 비활성)
+    public static bool SkillEnabled = true;       // 스킬 시스템 (파생, OFF면 퀸 아우라도 비활성)
     public static bool TurnTimeLimit = true;      // 턴 시간 제한
     public static int TurnSeconds = 30;           // 턴당 제한 시간(초)
+    public static int UnoStartHand = UnoRules.StartingHandSize; // 우노: 시작 카드 장수 (1~8)
+    public static int UnoMaxHand = UnoRules.LoseHandSize;       // 우노: 최대 패 장수 (10~20), 손패가 이 장수가 되면 패배
+
+    public static bool IsUno => Mode == MatchMode.Uno;
+
+    // 실제로 적용되는 턴 시간 제한. 우노 모드는 카드/이동 단계가 많아 시간 제한을 쓰지 않는다.
+    public static bool EffectiveTurnTimeLimit => TurnTimeLimit && !IsUno;
 
     public static event Action OnChanged;
 
     public static void ResetToDefault()
     {
-        AugmentEnabled = true; MaxAugments = 6; AugmentTimeLimit = false;
-        SkillEnabled = true; TurnTimeLimit = true; TurnSeconds = 30;
+        Mode = MatchMode.Default; MaxAugments = 6; AugmentTimeLimit = false; // 로비 기본 모드 = 기본 모드
+        TurnTimeLimit = true; TurnSeconds = 30;
+        UnoStartHand = UnoRules.StartingHandSize; UnoMaxHand = UnoRules.LoseHandSize;
+        Normalize();
         OnChanged?.Invoke();
     }
 
-    // 규칙 간 의존성 정리: 스킬 OFF -> 증강 OFF 강제, 증강 OFF -> 증강 시간 제한 OFF, 값 범위 보정.
+    // 모드에서 스킬/증강 사용 여부를 파생하고, 값 범위를 보정한다.
     public static void Normalize()
     {
-        if (!SkillEnabled) AugmentEnabled = false;
+        if (!Enum.IsDefined(typeof(MatchMode), Mode)) Mode = MatchMode.AugmentSkill;
+        SkillEnabled = Mode == MatchMode.Skill || Mode == MatchMode.AugmentSkill;
+        AugmentEnabled = Mode == MatchMode.AugmentSkill;
         if (!AugmentEnabled) AugmentTimeLimit = false;
         MaxAugments = Mathf.Clamp(MaxAugments, MinAugments, MaxAugmentsLimit);
+        UnoStartHand = Mathf.Clamp(UnoStartHand, MinUnoStartHand, MaxUnoStartHand);
+        UnoMaxHand = Mathf.Clamp(UnoMaxHand, MinUnoMaxHand, MaxUnoMaxHand);
         if (TurnSeconds < 1) TurnSeconds = 30;
     }
 
-    public static void Apply(bool augOn, int maxAug, bool augTime, bool skillOn, bool turnTime, int turnSec)
+    public static void Apply(MatchMode mode, int maxAug, bool augTime, bool turnTime, int turnSec, int unoStart, int unoMax)
     {
-        AugmentEnabled = augOn; MaxAugments = maxAug; AugmentTimeLimit = augTime;
-        SkillEnabled = skillOn; TurnTimeLimit = turnTime; TurnSeconds = turnSec;
+        Mode = mode; MaxAugments = maxAug; AugmentTimeLimit = augTime;
+        TurnTimeLimit = turnTime; TurnSeconds = turnSec;
+        UnoStartHand = unoStart; UnoMaxHand = unoMax;
         Normalize();
         OnChanged?.Invoke();
     }

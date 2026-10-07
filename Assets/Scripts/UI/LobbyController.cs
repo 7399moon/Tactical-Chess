@@ -21,11 +21,16 @@ public class LobbyController : MonoBehaviour
     [SerializeField] private Button randomButton;
 
     [Header("게임 규칙 (호스트만 편집)")]
-    [SerializeField] private Button augmentToggle;     [SerializeField] private Text augmentToggleLabel;
+    [SerializeField] private Dropdown modeDropdown;     // 게임 모드: 기본/스킬/증강(+스킬)/우노 (인덱스 = MatchMode 값)
+    [SerializeField] private GameObject[] augmentRows;  // 증강 모드에서만 보이는 행들 (최대 보유 증강, 증강 선택 시간)
+    [SerializeField] private GameObject[] unoRows;      // 우노 모드에서만 보이는 행들 (시작 카드 장수, 최대 패 장수)
+    [SerializeField] private Button unoStartMinus;     [SerializeField] private Button unoStartPlus;
+    [SerializeField] private Text unoStartValueText;
+    [SerializeField] private Button unoMaxMinus;       [SerializeField] private Button unoMaxPlus;
+    [SerializeField] private Text unoMaxValueText;
     [SerializeField] private Button maxAugMinus;       [SerializeField] private Button maxAugPlus;
     [SerializeField] private Text maxAugValueText;
     [SerializeField] private Button augTimeToggle;     [SerializeField] private Text augTimeToggleLabel;
-    [SerializeField] private Button skillToggle;       [SerializeField] private Text skillToggleLabel;
     [SerializeField] private Button turnToggle;        [SerializeField] private Text turnToggleLabel;
     [SerializeField] private InputField turnSecondsInput;
     [SerializeField] private Text rulesNoticeText;      // 게스트에게 "호스트만 변경 가능" 안내 / 스킬 OFF 안내
@@ -77,11 +82,16 @@ public class LobbyController : MonoBehaviour
         blackButton.onClick.AddListener(() => OnPick(LobbyState.PickBlack));
         randomButton.onClick.AddListener(() => OnPick(LobbyState.PickRandom));
 
-        augmentToggle.onClick.AddListener(() => Edit(() => MatchSettings.AugmentEnabled = !MatchSettings.AugmentEnabled));
+        modeDropdown.ClearOptions();
+        modeDropdown.AddOptions(new System.Collections.Generic.List<string> { "기본 모드", "스킬 모드", "증강(+스킬) 모드", "우노 모드" });
+        modeDropdown.onValueChanged.AddListener(OnModeChanged);
+        unoStartMinus.onClick.AddListener(() => Edit(() => MatchSettings.UnoStartHand--));
+        unoStartPlus.onClick.AddListener(() => Edit(() => MatchSettings.UnoStartHand++));
+        unoMaxMinus.onClick.AddListener(() => Edit(() => MatchSettings.UnoMaxHand--));
+        unoMaxPlus.onClick.AddListener(() => Edit(() => MatchSettings.UnoMaxHand++));
         maxAugMinus.onClick.AddListener(() => Edit(() => MatchSettings.MaxAugments--));
         maxAugPlus.onClick.AddListener(() => Edit(() => MatchSettings.MaxAugments++));
         augTimeToggle.onClick.AddListener(() => Edit(() => MatchSettings.AugmentTimeLimit = !MatchSettings.AugmentTimeLimit));
-        skillToggle.onClick.AddListener(() => Edit(() => MatchSettings.SkillEnabled = !MatchSettings.SkillEnabled));
         turnToggle.onClick.AddListener(() => Edit(() => MatchSettings.TurnTimeLimit = !MatchSettings.TurnTimeLimit));
 
         turnSecondsInput.contentType = InputField.ContentType.IntegerNumber;
@@ -129,6 +139,13 @@ public class LobbyController : MonoBehaviour
         MatchSettings.Normalize();
         Refresh();
         ChessNetworkSync.Instance?.BroadcastLobby();
+    }
+
+    // 드롭다운 선택 -> 호스트만 모드 변경. Refresh()가 값을 되돌리며 호출하는 SetValueWithoutNotify는 이벤트를 내지 않는다.
+    private void OnModeChanged(int index)
+    {
+        if (!IsHost || starting) { Refresh(); return; }
+        Edit(() => MatchSettings.Mode = (MatchMode)index);
     }
 
     private void OnTurnSecondsEdited(string text)
@@ -190,19 +207,30 @@ public class LobbyController : MonoBehaviour
 
         // 규칙 표시 (게스트는 읽기 전용)
         bool edit = host && !starting;
-        SetToggle(augmentToggle, augmentToggleLabel, MatchSettings.AugmentEnabled, edit && MatchSettings.SkillEnabled);
+        bool isAug = MatchSettings.Mode == MatchMode.AugmentSkill;
+        bool isUno = MatchSettings.IsUno;
+        modeDropdown.SetValueWithoutNotify((int)MatchSettings.Mode);
+        modeDropdown.interactable = edit;
+        // 선택된 모드의 옵션 행만 보인다. 씬에서는 기본 상태가 비활성(Hierarchy가 깔끔하도록)이고, 모드를 고르면 켜진다.
+        SetRowsEnabled(augmentRows, isAug);
+        SetRowsEnabled(unoRows, isUno);
+
         maxAugValueText.text = MatchSettings.MaxAugments.ToString();
-        SetBtn(maxAugMinus, edit && MatchSettings.AugmentEnabled && MatchSettings.MaxAugments > MatchSettings.MinAugments);
-        SetBtn(maxAugPlus, edit && MatchSettings.AugmentEnabled && MatchSettings.MaxAugments < MatchSettings.MaxAugmentsLimit);
-        SetToggle(augTimeToggle, augTimeToggleLabel, MatchSettings.AugmentTimeLimit, edit && MatchSettings.AugmentEnabled);
-        SetToggle(skillToggle, skillToggleLabel, MatchSettings.SkillEnabled, edit);
-        SetToggle(turnToggle, turnToggleLabel, MatchSettings.TurnTimeLimit, edit);
-        turnSecondsInput.interactable = edit && MatchSettings.TurnTimeLimit;
+        SetBtn(maxAugMinus, edit && isAug && MatchSettings.MaxAugments > MatchSettings.MinAugments);
+        SetBtn(maxAugPlus, edit && isAug && MatchSettings.MaxAugments < MatchSettings.MaxAugmentsLimit);
+        unoStartValueText.text = MatchSettings.UnoStartHand.ToString();
+        SetBtn(unoStartMinus, edit && isUno && MatchSettings.UnoStartHand > MatchSettings.MinUnoStartHand);
+        SetBtn(unoStartPlus, edit && isUno && MatchSettings.UnoStartHand < MatchSettings.MaxUnoStartHand);
+        unoMaxValueText.text = MatchSettings.UnoMaxHand.ToString();
+        SetBtn(unoMaxMinus, edit && isUno && MatchSettings.UnoMaxHand > MatchSettings.MinUnoMaxHand);
+        SetBtn(unoMaxPlus, edit && isUno && MatchSettings.UnoMaxHand < MatchSettings.MaxUnoMaxHand);
+        SetToggle(augTimeToggle, augTimeToggleLabel, MatchSettings.AugmentTimeLimit, edit && isAug);
+        SetToggle(turnToggle, turnToggleLabel, MatchSettings.EffectiveTurnTimeLimit, edit && !isUno); // 우노 모드: 시간 제한 없음(고정)
+        turnSecondsInput.interactable = edit && !isUno && MatchSettings.TurnTimeLimit;
         if (!turnSecondsInput.isFocused) turnSecondsInput.text = MatchSettings.TurnSeconds.ToString();
 
         if (rulesNoticeText != null)
-            rulesNoticeText.text = !host ? "규칙은 방장만 변경할 수 있습니다"
-                : !MatchSettings.SkillEnabled ? "스킬 OFF: 증강도 사용할 수 없고, 이동 후 턴이 자동 종료됩니다" : "";
+            rulesNoticeText.text = ModeNotice(MatchSettings.Mode) + (host ? "" : "  (방장만 변경 가능)");
 
         // 시작 버튼: 호스트 화면에만 표시
         startButton.gameObject.SetActive(host);
@@ -215,6 +243,23 @@ public class LobbyController : MonoBehaviour
                 : !LobbyState.GuestPresent ? (host ? "상대가 입장하길 기다리는 중입니다" : "")
                 : (LobbyState.HostPick == LobbyState.PickNone || LobbyState.GuestPick == LobbyState.PickNone) ? "두 플레이어 모두 진영을 선택하면 시작할 수 있습니다"
                 : (host ? "게임을 시작할 수 있습니다" : "방장이 게임을 시작하길 기다리는 중입니다");
+    }
+
+    private static string ModeNotice(MatchMode mode)
+    {
+        switch (mode)
+        {
+            case MatchMode.Default: return "기본 모드 : 기본 체스 규칙, 이동 후 턴 자동 종료";
+            case MatchMode.Skill: return "스킬 모드 : 스킬 사용";
+            case MatchMode.AugmentSkill: return "증강(+스킬) 모드 : 증강과 스킬 사용";
+            default: return "우노 모드 : 우노 카드로 턴 행동 결정";
+        }
+    }
+
+    private static void SetRowsEnabled(GameObject[] rows, bool on)
+    {
+        foreach (var go in rows)
+            if (go != null && go.activeSelf != on) go.SetActive(on);
     }
 
     private void SetPickButton(Button b, int pickValue, int mine, int other, bool canPick)

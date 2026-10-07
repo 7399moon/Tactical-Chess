@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b0cdaee32fce1b14cafed2c11a68ea74, type: 3}
+  m_Name: Blue_Reverse
+  m_EditorClassIdentifier: Uno::UnoCardData
+  cardId: Blue_Reverse
+  color: 3
+  kind: 3
+  number: 0
+  copies: 2
+  displayName: "\uD30C\uB791 \uB9AC\uBC84\uC2A4"
+  description: "\uB098\uC640 \uC0C1\uB300\uC758 \uC190\uD328\uB97C \uAD50\uD658\uD55C
+    \uB4A4 \uCCB4\uC2A4 \uC774\uB3D9 1\uD68C\uB97C \uD569\uB2C8\uB2E4."
+  sprite: {fileID: 301793231, guid: ed6b81aadfbf3bf4ebf5e9d951d1795f, type: 3}
+  chosenColorSprites: []

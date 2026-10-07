@@ -110,6 +110,36 @@ public class ChessNetworkSync : NetworkBehaviour
     }
     #endregion
 
+    #region 우노 카드 릴레이
+    // 카드 내기/뽑기 요청을 모든 클라이언트에 같은 순서로 전달한다 (각자 같은 시드의 UnoMatch에 적용).
+    // color: 와일드 색상(0~3), -1이면 자동 선택. 4단계에서 색상 선택 UI가 이 값을 채운다.
+    // ── 호스트 권한 구조 (7단계) ──
+    // 게스트는 "하고 싶은 일(명령)"만 호스트에게 보내고, 호스트가 검증·적용한 뒤 결과 이벤트를 게스트에게 보낸다.
+    // 상대 손패와 뽑을 카드 더미는 호스트만 알고, 게스트에게는 "내 손패에 들어온 카드"만 이벤트에 실려 간다.
+    // kind: UnoTurnController.K_* (0 카드 내기, 1 색 선택, 2 뽑기, 3 UNO 경쟁 클릭, 4 부활 기물 선택)
+
+    // 게스트 -> 호스트 명령
+    [Rpc(RpcSources.All, RpcTargets.StateAuthority)]
+    public void RPC_UnoCmd(int kind, int team, int a, int b)
+    {
+        UnoTurnController.Instance?.OnCommandFromGuest(kind, team, a, b);
+    }
+
+    // 호스트 -> 게스트 결과 이벤트. code = 낸 카드 코드, secrets = 게스트 손패에 들어온 카드들 (게스트 본인에게만 의미 있는 값)
+    [Rpc(RpcSources.StateAuthority, RpcTargets.Proxies)]
+    public void RPC_UnoEvt(int kind, int team, int a, int b, int code, string secrets)
+    {
+        UnoTurnController.Instance?.ReceiveEvent(kind, team, a, b, code, secrets);
+    }
+
+    // 호스트 -> 게스트 첫 배분: 게스트의 시작 손패와 시작 카드. matchId는 판 구분용 (MatchSession.AugmentSeed)
+    [Rpc(RpcSources.StateAuthority, RpcTargets.Proxies)]
+    public void RPC_UnoDeal(int matchId, string guestHand, int startCard)
+    {
+        UnoTurnController.ReceiveDeal(matchId, guestHand, startCard);
+    }
+    #endregion
+
     #region 재시작 릴레이
     // 게임오버 화면의 "게임 재시작" 버튼 클릭을 모든 클라이언트에 동일하게 전파한다.
     // 한쪽 클라이언트만 로컬로 GameStartController.StartMatch()를 호출하면 반대쪽은 게임오버 화면에
@@ -156,19 +186,21 @@ public class ChessNetworkSync : NetworkBehaviour
     {
         if (!Runner.IsServer) return;
         MatchSettings.Normalize();
-        int flags = (MatchSettings.AugmentEnabled ? 1 : 0) | (MatchSettings.AugmentTimeLimit ? 2 : 0)
-                  | (MatchSettings.SkillEnabled ? 4 : 0) | (MatchSettings.TurnTimeLimit ? 8 : 0);
+        // flags: 2 = 증강 선택 시간 제한, 8 = 턴 시간 제한 (1/4는 예전 증강/스킬 비트였고, 이제 모드(int)에서 파생한다)
+        int flags = (MatchSettings.AugmentTimeLimit ? 2 : 0) | (MatchSettings.TurnTimeLimit ? 8 : 0);
         RPC_LobbySnapshot(LobbyState.HostNick, LobbyState.GuestNick, LobbyState.GuestPresent,
-            LobbyState.HostPick, LobbyState.GuestPick, flags, MatchSettings.MaxAugments, MatchSettings.TurnSeconds);
+            LobbyState.HostPick, LobbyState.GuestPick, flags, MatchSettings.MaxAugments, MatchSettings.TurnSeconds,
+            (int)MatchSettings.Mode, MatchSettings.UnoStartHand, MatchSettings.UnoMaxHand);
     }
 
     [Rpc(RpcSources.All, RpcTargets.All)]
     public void RPC_LobbySnapshot(string hostNick, string guestNick, bool guestPresent, int hostPick, int guestPick,
-                                  int flags, int maxAugments, int turnSeconds)
+                                  int flags, int maxAugments, int turnSeconds,
+                                  int mode, int unoStartHand, int unoMaxHand)
     {
         if (Runner.IsServer) return; // 호스트는 이미 권한자 상태를 가지고 있다
         if (MatchSession.InMatch) return;
-        MatchSettings.Apply((flags & 1) != 0, maxAugments, (flags & 2) != 0, (flags & 4) != 0, (flags & 8) != 0, turnSeconds);
+        MatchSettings.Apply((MatchMode)mode, maxAugments, (flags & 2) != 0, (flags & 8) != 0, turnSeconds, unoStartHand, unoMaxHand);
         LobbyState.ApplySnapshot(hostNick, guestNick, guestPresent, hostPick, guestPick);
     }
 

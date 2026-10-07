@@ -104,6 +104,7 @@ public class PieceMovement : MonoBehaviour
         piece.currentX = target.x;
         piece.currentY = target.y;
         piece.hasMoved = true;
+        UnoTurnController.NoteMoved(piece); // 우노 모드: 이번 턴에 이 기물이 이동했음을 기록
 
         // 5. 지휘 스킬 횟수 차감
         // 2026-09-23 수정: IsCommandActive만 보고 차감하면, 지휘 대상이 아닌 다른 기물(특히 상대 팀이

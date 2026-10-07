@@ -32,6 +32,9 @@ public class CardUI : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler, 
     private Action<CardUI> onClickCallback;               // 카드 선택 시 부모 매니저로 넘길 콜백
     private bool isInteractable = true;                   // 카드 상호작용 가능 여부
     private bool isSelected = false;                       // 이 카드가 선택 확정되어 체크 표시를 유지 중인지 여부
+    private Vector2 baseOutlineDistance;
+    private bool outlineDistanceCached;
+    private bool isPicked = false;                         // 이 카드가 "고른 상태"(확인 버튼을 누르기 전)인지 여부
     #endregion
 
     #region 유니티 생명주기
@@ -60,10 +63,27 @@ public class CardUI : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler, 
     // [변경] 등급별 프레임 적용 오버로드
     public void SetVisual(Sprite icon, string cardName, string description, AugmentRarity rarity)
     {
+        SetSpriteOnlyMode(false);
         SetFrame(rarity);
         if (iconImage != null) iconImage.sprite = icon;
         if (nameText != null) nameText.text = cardName;
         if (descriptionText != null) descriptionText.text = description;
+    }
+
+    // 우노 색상 선택용: 카드 이미지 자체(프레임 자리)에 스프라이트를 그리고 아이콘/이름/설명은 숨긴다
+    public void SetSpriteOnly(Sprite cardSprite)
+    {
+        if (frameImage == null) frameImage = GetComponent<Image>();
+        SetSpriteOnlyMode(true);
+        if (frameImage != null && cardSprite != null) frameImage.sprite = cardSprite;
+    }
+
+    private void SetSpriteOnlyMode(bool on)
+    {
+        if (iconImage != null) iconImage.gameObject.SetActive(!on);
+        if (nameText != null) nameText.gameObject.SetActive(!on);
+        if (descriptionText != null) descriptionText.gameObject.SetActive(!on);
+        if (frameImage != null) frameImage.preserveAspect = on;
     }
 
     // [변경] 등급에 맞는 프레임 스프라이트로 교체
@@ -89,6 +109,7 @@ public class CardUI : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler, 
     {
         onClickCallback = onClick;
         SetInteractable(true);
+        isPicked = false;
         SetSelected(false);
 
         if (cardOutline != null)
@@ -97,6 +118,17 @@ public class CardUI : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler, 
 
     // 카드의 클릭 및 호버 입력 활성화 상태를 변경
     public void SetInteractable(bool value) => isInteractable = value;
+
+    // 확인 버튼을 누르기 전의 "고른 상태" 표시: 골드 아웃라인만 켠다(체크 표시는 확정 때만). 다시 호출해 false로 취소한다.
+    public void SetPicked(bool value)
+    {
+        isPicked = value;
+        if (cardOutline == null) return;
+        if (!outlineDistanceCached) { baseOutlineDistance = cardOutline.effectDistance; outlineDistanceCached = true; }
+        cardOutline.effectColor = value ? selectColor : hoverColor;
+        cardOutline.effectDistance = value ? baseOutlineDistance * 3f : baseOutlineDistance; // 고른 카드는 굵은 테두리로 눈에 띄게
+        cardOutline.enabled = value;
+    }
 
     // 이 카드가 "선택 확정" 상태인지 표시한다. true면 체크 표시를 띄우고 아웃라인을 골드색으로 고정한다.
     // 네트워크 대전 중 증강 카드를 선택한 직후, 상대방이 아직 선택하지 않아 애니메이션/패널 종료를
@@ -127,7 +159,7 @@ public class CardUI : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler, 
     // 마우스 호버 시 아웃라인 연출
     public void OnPointerEnter(PointerEventData eventData)
     {
-        if (!isInteractable || isSelected) return;
+        if (!isInteractable || isSelected || isPicked) return;
 
         if (cardOutline != null)
         {
@@ -139,7 +171,7 @@ public class CardUI : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler, 
     // 마우스 호버 이탈 시 아웃라인 해제
     public void OnPointerExit(PointerEventData eventData)
     {
-        if (!isInteractable || isSelected) return;
+        if (!isInteractable || isSelected || isPicked) return;
 
         if (cardOutline != null)
             cardOutline.enabled = false;
@@ -150,13 +182,7 @@ public class CardUI : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler, 
     {
         if (!isInteractable) return;
 
-        if (cardOutline != null)
-        {
-            cardOutline.effectColor = selectColor;
-            cardOutline.enabled = true;
-        }
-
-        onClickCallback?.Invoke(this);
+        onClickCallback?.Invoke(this); // 고름/취소 표시는 콜백을 받은 매니저가 SetPicked로 정한다
     }
     #endregion
 }

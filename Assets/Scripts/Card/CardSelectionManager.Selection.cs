@@ -31,12 +31,44 @@ using UnityEngine;
 public partial class CardSelectionManager
 {
     #region 선택 및 연출
-    // 카드 클릭 시 애니메이션 및 연출 시작
+    // 카드를 눌렀다: 처음 누르면 "고름"(아웃라인), 고른 카드를 다시 누르면 취소, 다른 카드를 누르면 옮겨 고른다.
+    // 실제 확정은 "확인" 버튼(OnConfirmPressed) 또는 증강 선택 제한 시간 만료 때 OnCardSelected가 처리한다.
+    private void OnCardClicked(CardUI card)
+    {
+        if (isClosing || card == null) return;
+
+        if (pickedCard == card)
+        {
+            ResetPickedCard();
+            return;
+        }
+
+        if (pickedCard != null) pickedCard.SetPicked(false);
+        pickedCard = card;
+        pickedCard.SetPicked(true);
+        if (confirmButton != null) confirmButton.interactable = true;
+    }
+
+    private void OnConfirmPressed()
+    {
+        if (isClosing || !IsSelecting || pickedCard == null) return;
+        OnCardSelected(pickedCard);
+    }
+
+    private void ResetPickedCard()
+    {
+        if (pickedCard != null) pickedCard.SetPicked(false);
+        pickedCard = null;
+        if (confirmButton != null) confirmButton.interactable = false;
+    }
+
+    // 확정된 카드로 애니메이션 및 연출 시작
     private void OnCardSelected(CardUI selectedCard)
     {
         // 여러 카드를 빠르게 클릭하는 것 방지
         if (isClosing) return;
         isClosing = true;
+        if (confirmButton != null) confirmButton.interactable = false;
 
         currentSelectedCard = selectedCard;
         SetCardsInteractable(false);
@@ -142,6 +174,16 @@ public partial class CardSelectionManager
                     return;
                 }
             }
+        }
+        else if (currentMode == CardSelectionMode.ColorChoice && currentSelectedCard != null)
+        {
+            // 우노 와일드 색상: 패널을 닫고(타이머 재개) 고른 색을 콜백으로 돌려준다
+            int colorIndex = Array.IndexOf(cardList, currentSelectedCard);
+            var callback = colorChoiceCallback;
+            colorChoiceCallback = null;
+            FinalizeCardSelectionUI(wasPromotion: false);
+            if (colorIndex >= 0 && colorIndex < 4) callback?.Invoke((UnoColor)colorIndex);
+            return;
         }
         else if (currentMode == CardSelectionMode.PieceChoice && currentSelectedCard != null)
         {
@@ -394,8 +436,13 @@ public partial class CardSelectionManager
 
         SetWaitingStatus(false);
 
+        // 색상 선택에서 줄였던 카드 크기를 되돌린다
+        if (cardList != null)
+            foreach (var c in cardList) if (c != null) c.transform.localScale = Vector3.one;
+
         IsSelecting = false;
         isClosing = false;
+        ResetPickedCard();
         currentSelectedCard = null;
         pieceChoiceCallback = null;
         pieceChoiceOptions = null;

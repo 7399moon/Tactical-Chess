@@ -37,6 +37,7 @@ public class GameOverUI : MonoBehaviour
             Color c = darkOverlay.color;
             c.a = 0f;
             darkOverlay.color = c;
+            darkOverlay.raycastTarget = false; // 결과 화면이 아닐 때는 아래 UI(카드 패 등) 클릭을 막지 않는다
         }
 
         if (restartButton != null) restartButton.onClick.AddListener(OnRestartButtonPressed);
@@ -85,11 +86,35 @@ public class GameOverUI : MonoBehaviour
     // 아니라면(로컬 테스트 등) 기존처럼 진영 이름 기준 문구를 결과창에 표시
     private void HandleWin(int winningTeam, GameEndManager.GameEndReason reason)
     {
+        // 우노 패 15장: 패배 연출(CARD OVERFLOW)을 보여 준 뒤 결과 화면을 띄운다
+        if (reason == GameEndManager.GameEndReason.HandOverflow)
+            StartCoroutine(ShowWinAfterDelay(winningTeam, reason, 2f));
+        else if (reason == GameEndManager.GameEndReason.HandEmpty)
+            StartCoroutine(ShowWinAfterDelay(winningTeam, reason, 1f)); // 마지막 카드가 더미에 놓이는 것을 잠깐 보여 준다
+        else
+            ShowWin(winningTeam, reason);
+    }
+
+    private IEnumerator ShowWinAfterDelay(int winningTeam, GameEndManager.GameEndReason reason, float delay)
+    {
+        yield return new WaitForSeconds(delay);
+        ShowWin(winningTeam, reason);
+    }
+
+    private void ShowWin(int winningTeam, GameEndManager.GameEndReason reason)
+    {
         string mainText;
+        bool? localWin = null;
+
+        // 내가 진 경우: 붉은 비네트 + 화면 흔들림 (우노 15장 패배는 UnoUI가 더 큰 연출을 따로 재생한다)
+        if (GameStartController.LocalTeam >= 0 && winningTeam != GameStartController.LocalTeam
+            && reason != GameEndManager.GameEndReason.HandOverflow)
+            PlayDefeatFx();
 
         if (GameStartController.LocalTeam >= 0)
         {
             bool isLocalWin = winningTeam == GameStartController.LocalTeam;
+            localWin = isLocalWin;
             mainText = isLocalWin ? "승리!" : "패배...";
             if (isLocalWin) SoundManager.Instance?.PlayGameWin();
             else SoundManager.Instance?.PlayGameLose();
@@ -100,7 +125,40 @@ public class GameOverUI : MonoBehaviour
             SoundManager.Instance?.PlayGameWin();
         }
 
-        Show(mainText, GetReasonText(reason));
+        Show(mainText, GetReasonText(reason, localWin));
+    }
+
+    private UnityEngine.UI.Image defeatVignette;
+
+    private void PlayDefeatFx()
+    {
+        if (defeatVignette == null)
+        {
+            var go = new GameObject("Defeat Vignette", typeof(RectTransform), typeof(CanvasRenderer), typeof(UnityEngine.UI.Image));
+            go.transform.SetParent(transform.parent, false);
+            go.transform.SetSiblingIndex(transform.GetSiblingIndex()); // 결과 화면 바로 뒤에 깔린다
+            var rt = (RectTransform)go.transform;
+            rt.anchorMin = Vector2.zero; rt.anchorMax = Vector2.one;
+            rt.offsetMin = rt.offsetMax = Vector2.zero;
+            defeatVignette = go.GetComponent<UnityEngine.UI.Image>();
+            defeatVignette.sprite = DefeatFx.VignetteSprite();
+            defeatVignette.raycastTarget = false;
+        }
+        defeatVignette.gameObject.SetActive(true);
+        defeatVignette.color = new Color(1f, 0.1f, 0.1f, 0f);
+        StartCoroutine(DefeatVignetteRoutine());
+        StartCoroutine(DefeatFx.ShakeCameras(0.45f, 0.12f));
+    }
+
+    private IEnumerator DefeatVignetteRoutine()
+    {
+        float t = 0f;
+        while (t < 0.8f)
+        {
+            t += Time.unscaledDeltaTime;
+            defeatVignette.color = new Color(1f, 0.1f, 0.1f, Mathf.Clamp01(t / 0.8f) * 0.75f);
+            yield return null;
+        }
     }
 
     // 무승부 이벤트 발생 시 "무승부" 문구와 사유를 결과창에 표시
@@ -142,16 +200,23 @@ public class GameOverUI : MonoBehaviour
 
     #region 결과 UI 표시 및 연출
     // 종료 사유 enum을 UI 출력용 한글 문자열로 변환
-    private string GetReasonText(GameEndManager.GameEndReason reason)
+    private string GetReasonText(GameEndManager.GameEndReason reason, bool? localWin = null)
     {
         switch (reason)
         {
             case GameEndManager.GameEndReason.Checkmate:
-                return "체크메이트로 승리";
+                return localWin == false ? "체크메이트를 당해 패배" : "체크메이트로 승리";
             case GameEndManager.GameEndReason.KingCaptured:
-                return "킹 캡처로 승리";
+                return localWin == false ? "킹을 잡혀 패배" : "킹 캡처로 승리";
             case GameEndManager.GameEndReason.Stalemate:
                 return "스테일메이트로 무승부";
+            case GameEndManager.GameEndReason.HandOverflow:
+                // 로컬 승패를 알면 내 기준 문구, 모르면(로컬 테스트) 중립 문구
+                return localWin == true ? $"상대의 패가 {MatchSettings.UnoMaxHand}장이 되어 승리했습니다"
+                     : localWin == false ? $"패가 {MatchSettings.UnoMaxHand}장이 되어 패배했습니다"
+                     : $"패가 {MatchSettings.UnoMaxHand}장이 되어 승리했습니다";
+            case GameEndManager.GameEndReason.HandEmpty:
+                return localWin == false ? "상대가 손패를 모두 비워 패배" : "손패를 모두 비워 승리";
             default:
                 return string.Empty;
         }
@@ -163,6 +228,7 @@ public class GameOverUI : MonoBehaviour
         if (resultText != null) resultText.text = mainText;
         if (reasonText != null) reasonText.text = reason;
         if (resultPanel != null) resultPanel.SetActive(true);
+        if (darkOverlay != null) darkOverlay.raycastTarget = true;
 
         StartCoroutine(FadeInOverlayRoutine());
     }
@@ -192,6 +258,8 @@ public class GameOverUI : MonoBehaviour
     public void HideResult()
     {
         StopAllCoroutines();
+        DefeatFx.RestoreCameras();
+        if (defeatVignette != null) defeatVignette.gameObject.SetActive(false);
 
         if (resultPanel != null)
             resultPanel.SetActive(false);
@@ -201,6 +269,7 @@ public class GameOverUI : MonoBehaviour
             Color c = darkOverlay.color;
             c.a = 0f;
             darkOverlay.color = c;
+            darkOverlay.raycastTarget = false;
         }
     }
     #endregion

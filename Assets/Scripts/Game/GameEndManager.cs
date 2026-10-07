@@ -9,7 +9,7 @@ public class GameEndManager : MonoBehaviour
     public static GameEndManager Instance { get; private set; }
 
     // 게임 종료 원인
-    public enum GameEndReason { Checkmate, KingCaptured, Stalemate }
+    public enum GameEndReason { Checkmate, KingCaptured, Stalemate, HandOverflow, HandEmpty } // 뒤의 둘은 우노 모드
 
     #region 참조 및 설정값
     [Header("References")]
@@ -65,6 +65,15 @@ public class GameEndManager : MonoBehaviour
 
         IsGameOver = true;
         OnWin?.Invoke(1 - capturedTeam, GameEndReason.KingCaptured);
+    }
+
+    // 우노 모드 승리 (상대 패가 최대 장수에 도달 = HandOverflow, 내 손패를 모두 비움 = HandEmpty)
+    public void NotifyUnoWin(int winningTeam, GameEndReason reason)
+    {
+        if (IsGameOver) return;
+
+        IsGameOver = true;
+        OnWin?.Invoke(winningTeam, reason);
     }
 
     // 새 매치를 시작할 때 이전 매치의 종료 상태를 초기화한다.

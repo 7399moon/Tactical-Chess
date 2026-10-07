@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 
 [System.Flags]
 public enum AugmentRarityMask
@@ -29,7 +30,7 @@ public partial class CardSelectionManager : MonoBehaviour
     public static CardSelectionManager Instance { get; private set; }
 
     // 카드 선택 화면의 용도를 구분하는 열거형
-    private enum CardSelectionMode { Promotion, Augment, PieceChoice }
+    private enum CardSelectionMode { Promotion, Augment, PieceChoice, ColorChoice }
 
     #region Serialized Fields
     [Header("UI Panels & Prefabs")]
@@ -59,6 +60,9 @@ public partial class CardSelectionManager : MonoBehaviour
     [Header("Augment Rarity Filter Settings")]
     [SerializeField] private AugmentRarityMask allowedRarities = AugmentRarityMask.All; // 인스펙터에서 필터링할 등급 선택
 
+    [Header("선택 확인")]
+    [SerializeField] private Button confirmButton;                          // 고른 카드를 확정하는 "확인" 버튼 (내리기 버튼 왼쪽)
+
     [Header("네트워크 대기 표시 (선택 사항)")]
     [SerializeField] private GameObject waitingStatusIndicator; // "상대방 선택 대기 중" 안내 오브젝트 - 없으면 표시만 생략
     #endregion
@@ -75,6 +79,10 @@ public partial class CardSelectionManager : MonoBehaviour
     private int pendingPromotionTeam;
     private int pendingPieceChoiceTeam;
     private CardUI currentSelectedCard;
+    private CardUI pickedCard;                            // 고른(아직 확인 전) 카드
+
+    // 우노 와일드 색상 선택(ColorChoice) 전용
+    private System.Action<UnoColor> colorChoiceCallback;
 
     // 이진 선택(PieceChoice) 전용
     private PromotionOptionData[] pieceChoiceOptions;
@@ -99,6 +107,16 @@ public partial class CardSelectionManager : MonoBehaviour
     #endregion
 
     public PromotionOptionData KnightPromotionData => knightPromotionData;
+
+    // 승급 카드 데이터의 아이콘 (나이트/비숍/룩/퀸). 폰 등 없는 종류는 null
+    public Sprite GetPieceIcon(ChessPieceType type)
+    {
+        if (promotionOptions == null) return null;
+        string n = type.ToString();
+        foreach (var o in promotionOptions)
+            if (o != null && o.icon != null && n.EndsWith(o.pieceType.ToString())) return o.icon;
+        return null;
+    }
     public PromotionOptionData BishopPromotionData => bishopPromotionData;
 
     #region Unity Lifecycle & Initialization
@@ -112,6 +130,12 @@ public partial class CardSelectionManager : MonoBehaviour
         Instance = this;
 
         CacheCardPositions();
+
+        if (confirmButton != null)
+        {
+            confirmButton.onClick.AddListener(OnConfirmPressed);
+            confirmButton.interactable = false;
+        }
 
         if (cardSelectionPanel != null)
             cardSelectionPanel.SetActive(false);
@@ -171,6 +195,7 @@ public partial class CardSelectionManager : MonoBehaviour
 
         IsSelecting = true;
         isClosing = false;
+        ResetPickedCard();
         currentMode = promotion ? CardSelectionMode.Promotion : CardSelectionMode.Augment;
         pendingPromotionTile = promotionTile;
         pendingPromotionTeam = team;
@@ -199,7 +224,7 @@ public partial class CardSelectionManager : MonoBehaviour
 
             card.transform.localPosition = originalPositions[i];
             card.gameObject.SetActive(true);
-            card.SetupCard(OnCardSelected);
+            card.SetupCard(OnCardClicked);
             card.SetInteractable(true);
         }
     }
@@ -223,6 +248,7 @@ public partial class CardSelectionManager : MonoBehaviour
 
         IsSelecting = true;
         isClosing = false;
+        ResetPickedCard();
         currentMode = CardSelectionMode.PieceChoice;
 
         GameManager.Instance?.PauseTimer();
@@ -243,12 +269,49 @@ public partial class CardSelectionManager : MonoBehaviour
 
             if (isActiveSlot)
             {
-                card.SetupCard(OnCardSelected);
+                card.SetupCard(OnCardClicked);
                 card.SetInteractable(true);
             }
         }
     }
     #endregion
+
+    // 우노 와일드 색상 선택: 기존 4장 카드 선택 UI를 재사용해 카드 대신 색상 4개(빨강/노랑/초록/파랑)를 보여준다.
+    // 선택 결과는 이 클라이언트에서만 필요하므로(이후 카드 내기 RPC에 색이 실려 간다) 별도 RPC 없이 콜백으로 돌려준다.
+    // colorSprites: Red, Yellow, Green, Blue 순서의 아이콘 (UnoCardData.chosenColorSprites)
+    public void ShowColorChoice(Sprite[] colorSprites, System.Action<UnoColor> onChosen)
+    {
+        if (IsSelecting) return;
+
+        IsSelecting = true;
+        isClosing = false;
+        ResetPickedCard();
+        currentMode = CardSelectionMode.ColorChoice;
+        colorChoiceCallback = onChosen;
+
+        GameManager.Instance?.PauseTimer();
+
+        if (cardSelectionPanel != null)
+            cardSelectionPanel.SetActive(true);
+
+        string[] names = { "빨강", "노랑", "초록", "파랑" };
+        for (int i = 0; i < cardList.Length; i++)
+        {
+            CardUI card = cardList[i];
+            if (card == null) continue;
+
+            bool hasColor = i < 4;
+            card.transform.localPosition = originalPositions[i];
+            card.gameObject.SetActive(hasColor);
+            if (!hasColor) continue;
+
+            Sprite icon = colorSprites != null && i < colorSprites.Length ? colorSprites[i] : null;
+            card.SetSpriteOnly(icon);
+            card.transform.localScale = Vector3.one * 0.7f; // 카드 크기를 줄여 카드 사이에 간격을 둔다
+            card.SetupCard(OnCardClicked);
+            card.SetInteractable(true);
+        }
+    }
 
     #region 증강 체크포인트
     // GameManager.EndTurn()이 10턴마다 호출한다. 백/흑 두 팀을 모두 대기열에 넣고 각자 제안하되,

@@ -16,6 +16,15 @@ public partial class ChessInteractionManager
 
         ChessPieces clickedPiece = hitObject.GetComponentInParent<ChessPieces>();
 
+        // 우노 부활 카드: 부활 위치 선택 단계에서는 이 클릭을 부활 처리에만 쓴다
+        if (UnoTurnController.Active && UnoTurnController.Instance.Phase == UnoPhase.ReviveSelectTile)
+        {
+            Vector2Int rt = clickedPiece != null ? new Vector2Int(clickedPiece.currentX, clickedPiece.currentY)
+                : (board != null ? board.LookupTileIndex(hitObject) : -Vector2Int.one);
+            if (rt != -Vector2Int.one) UnoTurnController.Instance.TryHandleReviveClick(rt.x, rt.y);
+            return;
+        }
+
         // 2026-09-21 수정(1-2): 팀별 pendingPromotions 딕셔너리로 바뀌면서, "이 클릭이 지금 대기 중인
         // 어떤 팀의 승급 요청 대상인가"를 클릭된 기물의 팀으로 직접 판별한다. 예전에는 팀 구분 없는
         // 단일 플래그(isWaitingForPromotionTarget)라서, 누군가의 승급이 대기 중이기만 하면 그와 무관한

@@ -83,6 +83,7 @@ public class GameStartController : MonoBehaviour
         GameEndManager.Instance?.ResetGameEnd();
         GameOverUI.Instance?.HideResult();
         ChessInteractionManager.Instance?.ResetInteractionState();
+        UnoTurnController.Instance?.BeginMatch(); // GameManager 리셋(첫 턴 시작 이벤트)보다 먼저: 덱/손패 준비
         GameManager.Instance?.ResetForNewMatch();
 
         // 로비 규칙(스킬/증강 ON/OFF)을 UI에 반영

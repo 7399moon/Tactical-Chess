@@ -28,7 +28,7 @@ public class SettingsManager : MonoBehaviour
     #endregion
 
     #region 현재 설정값
-    public int Volume { get; private set; } = 100;            // 0~100 (%)
+    public int Volume { get; private set; } = 50;             // 0~100 (%)
     public int ResolutionWidth { get; private set; }
     public int ResolutionHeight { get; private set; }
     public bool IsFullScreen { get; private set; }            // true = 전체화면, false = 창 모드
@@ -72,7 +72,7 @@ public class SettingsManager : MonoBehaviour
     // 저장된 설정을 읽어 적용한다. 저장된 값이 없으면(첫 실행) 화면 설정은 건드리지 않고 현재 상태를 그대로 표시한다.
     private void LoadAndApply()
     {
-        Volume = Mathf.Clamp(PlayerPrefs.GetInt(VolumeKey, 100), 0, 100);
+        Volume = Mathf.Clamp(PlayerPrefs.GetInt(VolumeKey, 50), 0, 100);
 
         bool hasScreenSetting = PlayerPrefs.HasKey(ResolutionWidthKey) || PlayerPrefs.HasKey(FullScreenKey);
 

@@ -15,6 +15,14 @@ public partial class SkillUIManager
     // 에서는 팀 배정이 없으므로 기존처럼 백팀(0) 기준으로 동작한다.
     public void RefreshUIState()
     {
+        // 우노 모드: 스킬 UI는 쓰지 않고, 턴 종료 버튼만 우노 규칙으로 갱신한다
+        if (UnoTurnController.Active)
+        {
+            DisableAllButtons();
+            if (endTurnButton) endTurnButton.interactable = UnoTurnController.Instance.CanManualEndTurn;
+            return;
+        }
+
         int currentTurn = GameManager.Instance != null ? GameManager.Instance.CurrentTurn : 0;
         int myTeam = GameStartController.LocalTeam >= 0 ? GameStartController.LocalTeam : 0;
 

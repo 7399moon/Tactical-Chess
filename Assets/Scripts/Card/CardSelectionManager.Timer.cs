@@ -39,7 +39,8 @@ public partial class CardSelectionManager
         selectTimerArmed = false;
         GameManager.Instance?.SetSelectionBar(-1f);
 
-        // 현재 화면에 떠 있는 카드 중 무작위 1장을 자동 선택한다.
+        // 이미 고른 카드가 있으면 그 카드를, 없으면 현재 화면에 떠 있는 카드 중 무작위 1장을 자동 선택한다.
+        if (pickedCard != null) { OnCardSelected(pickedCard); return; }
         autoPickBuffer.Clear();
         for (int i = 0; i < cardList.Length; i++)
         {

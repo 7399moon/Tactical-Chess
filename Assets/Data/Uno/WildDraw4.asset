@@ -1,0 +1,30 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b0cdaee32fce1b14cafed2c11a68ea74, type: 3}
+  m_Name: WildDraw4
+  m_EditorClassIdentifier: Uno::UnoCardData
+  cardId: WildDraw4
+  color: 4
+  kind: 5
+  number: 0
+  copies: 4
+  displayName: "\uC640\uC77C\uB4DC +4"
+  description: "\uC0C1\uB300\uC5D0\uAC8C +4\uB97C \uBD80\uACFC\uD558\uACE0 \uC0C9\uC0C1\uC744
+    \uACE0\uB978 \uB4A4 \uCCB4\uC2A4 \uC774\uB3D9 1\uD68C\uB97C \uD569\uB2C8\uB2E4.
+    \uC0C1\uB300\uB294 \uC640\uC77C\uB4DC +4\uB85C\uB9CC \uBC18\uACA9\uD560 \uC218
+    \uC788\uC2B5\uB2C8\uB2E4."
+  sprite: {fileID: 1474982688, guid: ed6b81aadfbf3bf4ebf5e9d951d1795f, type: 3}
+  chosenColorSprites:
+  - {fileID: -1002046461, guid: ed6b81aadfbf3bf4ebf5e9d951d1795f, type: 3}
+  - {fileID: 189347764, guid: ed6b81aadfbf3bf4ebf5e9d951d1795f, type: 3}
+  - {fileID: -1939009382, guid: ed6b81aadfbf3bf4ebf5e9d951d1795f, type: 3}
+  - {fileID: -2136593745, guid: ed6b81aadfbf3bf4ebf5e9d951d1795f, type: 3}

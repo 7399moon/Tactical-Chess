@@ -81,7 +81,7 @@ public class GameManager : MonoBehaviour
             DrawBar(selectionBarValue);
 
         if (!useTurnSystem || isPaused) return;
-        if (!MatchSettings.TurnTimeLimit) return; // 턴 시간 제한 OFF: 무제한
+        if (!MatchSettings.EffectiveTurnTimeLimit) return; // 턴 시간 제한 OFF(또는 우노 모드): 무제한
 
         // 게임 종료 상태 시 타이머 업데이트 중단
         if (GameEndManager.Instance != null && GameEndManager.Instance.IsGameOver)
@@ -139,9 +139,11 @@ public class GameManager : MonoBehaviour
     }
 
     // 현재 턴을 종료하고 다음 팀으로 턴을 전환
-    public void EndTurn()
+    // keepSameTeam: 우노 스킵 카드처럼 상대 턴을 건너뛰고 같은 팀이 한 번 더 진행할 때 true
+    public void EndTurn(bool keepSameTeam = false)
     {
         if (!useTurnSystem) return;
+        if (UnoTurnController.Active && UnoTurnController.Instance.ConsumeSkip()) keepSameTeam = true; // 우노 스킵: 수동 종료도 상대 턴을 건너뜀
 
         SoundManager.Instance?.PlayTurnEnd();
 
@@ -160,7 +162,7 @@ public class GameManager : MonoBehaviour
         }
 
         turnCount++;
-        currentTurn = 1 - currentTurn;
+        if (!keepSameTeam) currentTurn = 1 - currentTurn;
         StartTurn(currentTurn);
     }
 
@@ -225,6 +227,14 @@ public class GameManager : MonoBehaviour
     public void PieceMoved()
     {
         if (!useTurnSystem) return;
+
+        // 우노 모드: 이동 1회가 끝났다. 요구된 횟수를 채웠을 때만 UnoTurnController가 턴을 넘긴다.
+        if (UnoTurnController.Active)
+        {
+            UnoTurnController.Instance.OnMoveFinished();
+            return;
+        }
+
         hasMovedThisTurn = true;
         EndTurn();
     }
@@ -299,6 +309,7 @@ public class GameManager : MonoBehaviour
         bool wasActive = selectionBarValue >= 0f;
         selectionBarValue = normalized < 0f ? -1f : Mathf.Clamp01(normalized);
         if (wasActive != (selectionBarValue >= 0f)) RefreshBarVisibility();
+        if (selectionBarValue >= 0f) DrawBar(selectionBarValue); // 같은 프레임에 즉시 fill/wave 위치를 맞춘다(한 프레임 지연 방지)
     }
 
     // 턴 시간 제한 OFF면 시간 바(배경+Fill 이미지)만 숨긴다. 턴 수 텍스트(TurnCount)는 바의 자식이라
@@ -306,7 +317,7 @@ public class GameManager : MonoBehaviour
     public void RefreshBarVisibility()
     {
         if (turnTimeBar == null) return;
-        bool visible = MatchSettings.TurnTimeLimit || selectionBarValue >= 0f;
+        bool visible = MatchSettings.EffectiveTurnTimeLimit || selectionBarValue >= 0f;
         if (turnBarImages == null)
             turnBarImages = turnTimeBar.GetComponentsInChildren<Image>(true); // 한 번만 조회해 캐싱(매번 배열 할당 방지)
         for (int i = 0; i < turnBarImages.Length; i++)

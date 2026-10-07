@@ -25,9 +25,9 @@ public class AugmentViewUI : MonoBehaviour
     [SerializeField] private Button blackTeamButton;
     [SerializeField] private Image whiteTeamButtonImage;
     [SerializeField] private Image blackTeamButtonImage;
-    [SerializeField] private Color selectedTeamButtonColor = new Color(1f, 0.8f, 0f, 1f);   // 현재 선택된 팀 버튼 강조색
-    [SerializeField] private Color whiteTeamDefaultColor = new Color(0.85f, 0.85f, 0.85f, 1f);
-    [SerializeField] private Color blackTeamDefaultColor = new Color(0.15f, 0.15f, 0.15f, 1f);
+    [SerializeField] private Color selectedTeamButtonColor = new Color(1f, 0.78f, 0.3f, 1f); // 현재 선택된 팀 버튼 강조색 (다른 UI의 선택색과 동일)
+    [SerializeField] private Color whiteTeamDefaultColor = new Color(0.9f, 0.9f, 0.9f, 1f);   // [변경] 백/흑 팀 버튼 기본색 동일
+    [SerializeField] private Color blackTeamDefaultColor = new Color(0.9f, 0.9f, 0.9f, 1f);   // [변경] 백/흑 팀 버튼 기본색 동일
 
     [Header("Open / Close Buttons")]
     [SerializeField] private Button openButton;   // HUD 상의 "보유 증강 확인" 버튼 (Canvas 어디에 있든 무방)

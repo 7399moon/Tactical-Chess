@@ -7,6 +7,7 @@ using UnityEngine;
 //  - ChessInteractionManager.Skills.cs      : 클릭 입력 분기 및 액티브 스킬 발동 처리
 //  - ChessInteractionManager.Promotion.cs   : 증강으로 인한 "즉시 승급 대상 클릭" 대기 상태 처리
 //  - ChessInteractionManager.CheckState.cs  : 체크 상태 갱신 및 하이라이트 외부 중계 메서드
+//  - ChessInteractionManager.Drag.cs        : 기물 드래그 이동(마우스로 집어서 옮기는 방식) 처리
 public partial class ChessInteractionManager : MonoBehaviour
 {
     public static ChessInteractionManager Instance { get; private set; }
@@ -51,6 +52,8 @@ public partial class ChessInteractionManager : MonoBehaviour
         if (inputHandler != null)
             inputHandler.OnObjectClicked += OnLocalBoardClicked;
 
+        SubscribeDragEvents();
+
         if (GameManager.Instance != null)
         {
             GameManager.Instance.OnTurnTimeout += ForceDeselect;
@@ -68,6 +71,8 @@ public partial class ChessInteractionManager : MonoBehaviour
     {
         if (inputHandler != null)
             inputHandler.OnObjectClicked -= OnLocalBoardClicked;
+
+        UnsubscribeDragEvents();
 
         if (GameManager.Instance != null)
         {
@@ -97,6 +102,14 @@ public partial class ChessInteractionManager : MonoBehaviour
     private void OnLocalBoardClicked(GameObject hitObject)
     {
         if (hitObject == null) return;
+
+        // 우노 UNO 경쟁: 턴과 무관하게 양쪽이 빛나는 칸을 누를 수 있다 (순서는 RPC 도착 순서)
+        if (UnoTurnController.RaceActive)
+        {
+            if (ResolveBoardCoords(hitObject) == UnoTurnController.RaceTile)
+                UnoTurnController.Instance.RequestRaceClick();
+            return;
+        }
 
         // 네트워크 대전 중이 아니면(로컬 테스트 등) 기존처럼 즉시 처리
         if (GameStartController.LocalTeam < 0)
@@ -160,6 +173,10 @@ public partial class ChessInteractionManager : MonoBehaviour
     private bool CanSelect(ChessPieces piece)
     {
         if (piece == null) return false;
+
+        // 우노 모드: 카드를 낸 뒤에만, 이번 턴에 아직 안 움직인 기물만 고를 수 있다
+        if (UnoTurnController.Active && !UnoTurnController.Instance.CanSelectPiece(piece))
+            return false;
 
         int actingTeam = GameManager.Instance != null ? GameManager.Instance.CurrentTurn : piece.team;
 

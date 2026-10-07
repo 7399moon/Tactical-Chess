@@ -1,7 +1,7 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using UnityEngine;
 
-// 체스판 타일의 머티리얼 색상 변경 및 시각적 강조(이동/캡처/체크/체크메이트/호버)를 전담하는 클래스.
+// 체스판 타일의 머티리얼 색상 변경 및 시각적 강조(이동/캡처/체크/체크메이트/호버/드래그)를 전담하는 클래스.
 public class BoardTileHighlighter : MonoBehaviour
 {
     public static BoardTileHighlighter Instance { get; private set; }
@@ -17,6 +17,7 @@ public class BoardTileHighlighter : MonoBehaviour
     [Header("Highlight Color Settings")]
     [SerializeField] private Color moveTint = new Color(1.0f, 1.3f, 0.2f);
     [SerializeField] private Color captureTint = new Color(1.4f, 0.25f, 0.25f);
+    [SerializeField] private Color dragHoverTint = new Color(0.25f, 1.7f, 0.3f); // 드래그 중 가리키고 있는 칸(초록색)
     [SerializeField] private float hoverDimFactor = 0.6f;
     #endregion
 
@@ -29,6 +30,9 @@ public class BoardTileHighlighter : MonoBehaviour
 
     private Vector2Int checkedKingTile = -Vector2Int.one;
     private readonly List<Vector2Int> checkmateAttackerTiles = new List<Vector2Int>();
+
+    // 기물을 드래그하는 동안 현재 가리키고 있는 칸(이동 가능한 칸일 때만 설정됨, 없으면 -1,-1)
+    private Vector2Int dragHoverTile = -Vector2Int.one;
 
     // 체크 및 체크메이트 강조용 고정 색상 상수
     private static readonly Color CheckTint = new Color(1.6f, 0.2f, 0.2f, 1.0f);
@@ -74,7 +78,7 @@ public class BoardTileHighlighter : MonoBehaviour
         tileHighlightStates[x, y] = state;
     }
 
-    // 지정된 타일의 상태(이동, 공격, 체크, 호버 등)를 종합하여 최종 머티리얼 색상을 갱신
+    // 지정된 타일의 상태(이동, 공격, 체크, 호버, 드래그 등)를 종합하여 최종 머티리얼 색상을 갱신
     public void RefreshTileColor(Vector2Int pos, Vector2Int currentHover)
     {
         if (board == null || tileMaterialInstances == null) return;
@@ -83,8 +87,15 @@ public class BoardTileHighlighter : MonoBehaviour
         Color baseColor = (((pos.x + pos.y) & 1) == 0) ? whiteTileColor : blackTileColor;
         Color result = baseColor;
 
-        // 1. 이동 / 공격 타일 하이라이트 적용
-        if (tileHighlightStates[pos.x, pos.y] == TileHighlightState.Move)
+        // 1. 드래그 중 가리키고 있는 칸 강조(초록색) - 이동/공격 강조보다 우선 적용
+        if (pos == dragHoverTile)
+        {
+            result.r *= dragHoverTint.r;
+            result.g *= dragHoverTint.g;
+            result.b *= dragHoverTint.b;
+        }
+        // 2. 이동 / 공격 타일 하이라이트 적용
+        else if (tileHighlightStates[pos.x, pos.y] == TileHighlightState.Move)
         {
             result.r *= moveTint.r;
             result.g *= moveTint.g;
@@ -97,7 +108,7 @@ public class BoardTileHighlighter : MonoBehaviour
             result.b *= captureTint.b;
         }
 
-        // 2. 체크 상태인 킹 타일 강조
+        // 3. 체크 상태인 킹 타일 강조
         if (pos == checkedKingTile)
         {
             result.r *= CheckTint.r;
@@ -105,7 +116,7 @@ public class BoardTileHighlighter : MonoBehaviour
             result.b *= CheckTint.b;
         }
 
-        // 3. 체크메이트를 유발한 공격 기물 타일 강조
+        // 4. 체크메이트를 유발한 공격 기물 타일 강조
         if (checkmateAttackerTiles.Contains(pos))
         {
             result.r *= CheckmateAttackerTint.r;
@@ -113,7 +124,7 @@ public class BoardTileHighlighter : MonoBehaviour
             result.b *= CheckmateAttackerTint.b;
         }
 
-        // 4. 마우스 호버 연출 (다른 강조가 없을 때만 적용)
+        // 5. 마우스 호버 연출 (다른 강조가 없을 때만 적용)
         if (currentHover == pos && tileHighlightStates[pos.x, pos.y] == TileHighlightState.None)
         {
             result *= hoverDimFactor;
@@ -186,6 +197,22 @@ public class BoardTileHighlighter : MonoBehaviour
 
         for (int i = 0; i < checkmateAttackerTiles.Count; i++)
             RefreshTileColor(checkmateAttackerTiles[i], -Vector2Int.one);
+    }
+    #endregion
+
+    #region 드래그 중 칸 강조
+    // 기물을 드래그하는 동안 현재 가리키고 있는 칸(이동 가능한 칸일 때만 호출됨)을 초록색으로 강조한다.
+    // null을 전달하면 강조를 해제한다.
+    public void SetDragHoverTile(Vector2Int? pos)
+    {
+        Vector2Int oldTile = dragHoverTile;
+        Vector2Int newTile = pos ?? -Vector2Int.one;
+        if (oldTile == newTile) return;
+
+        dragHoverTile = newTile;
+
+        if (oldTile != -Vector2Int.one) RefreshTileColor(oldTile, -Vector2Int.one);
+        if (dragHoverTile != -Vector2Int.one) RefreshTileColor(dragHoverTile, -Vector2Int.one);
     }
     #endregion
 }

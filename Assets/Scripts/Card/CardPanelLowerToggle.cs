@@ -14,6 +14,7 @@ public class CardPanelLowerToggle : MonoBehaviour
     #region 인스펙터 설정값
     [SerializeField] private Button toggleButton;       // 패널 밖에 있는 토글 버튼
     [SerializeField] private Text toggleLabel;          // 토글 버튼 라벨
+    [SerializeField] private Button confirmButton;      // 확인 버튼 (패널과 함께 보이고 숨겨짐, 클릭 처리는 CardSelectionManager)
     [SerializeField] private float lowerDistance = 1300f; // 내릴 때 이동 거리 (Canvas 기준 px, 화면 높이보다 크게)
     [SerializeField] private float slideDuration = 0.25f; // 슬라이드 시간 (초)
     [SerializeField] private string raisedLabel = "▼ 내리기";     // 펼쳐진 상태에서 버튼에 표시할 문구
@@ -41,6 +42,7 @@ public class CardPanelLowerToggle : MonoBehaviour
 
         ResetToRaised();
         if (toggleButton != null) toggleButton.gameObject.SetActive(true);
+        if (confirmButton != null) confirmButton.gameObject.SetActive(true);
     }
 
     // 패널이 꺼지면(선택 완료) 버튼을 숨기고 위치를 원래대로 돌려놓는다.
@@ -48,6 +50,7 @@ public class CardPanelLowerToggle : MonoBehaviour
     {
         ResetToRaised();
         if (toggleButton != null) toggleButton.gameObject.SetActive(false);
+        if (confirmButton != null) confirmButton.gameObject.SetActive(false);
     }
     #endregion
 

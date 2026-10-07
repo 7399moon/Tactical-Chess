@@ -21,11 +21,14 @@
 ### 증강(강화) 시스템
 총 40종(노말 15 / 레어 12 / 유니크 8 / 레전더리 5), `AugmentData` ScriptableObject로 관리. 프로모션 발생 시 또는 10턴마다 카드 선택 체크포인트가 열리며, 두 팀이 각자 독립적으로 최대 6개까지 보유 가능(팀당 별도 상한). 나이트/비숍 중 하나를 고르는 이진 선택형 증강도 지원.
 
+### 우노 체스 모드
+로비에서 모드를 고르면 스킬/증강 대신 UNO 카드를 내서 기물을 움직인다. 숫자 1~4는 서로 다른 기물을 숫자만큼 이동, 5~8은 잡힌 기물 부활, 0/스킵/+2/리버스/와일드/와일드 +4는 각자의 효과를 가진다. +2/+4 중첩 반격, 손패 1장일 때 UNO 경쟁(빛나는 칸을 먼저 클릭), 패 한도 초과 패배 연출을 지원한다.
+
 ### 온라인 2인 대전 (Photon Fusion 2)
 방 코드를 생성/입력해 입장하는 방식(퀵매치 아님). Host가 White, 참가자가 Black으로 자동 배정되며 팀별로 카메라가 반전되어 보인다. 보드/기물은 하나를 공유하고, 클릭 좌표만 RPC로 중계해 양쪽 클라이언트가 동일한 로직을 재실행하는 방식으로 동기화한다. 턴 진행, 스킬 발동, 카드 선택(증강/승급/이진선택) 결과까지 전부 이 방식으로 동기화되며, 매치 재시작과 타이틀로 나가기 기능도 지원한다.
 
 ### UI
-스킬 버튼(쿨타임 표시, 내 턴이 아닐 때 반투명 처리), 카드 선택 화면(증강/승급/이진선택 - 팀별 개별 진행, 선택 시 체크 표시 + 대기 상태), 보유 증강 확인 패널(백/흑 토글, 좌우 스크롤), 게임오버 화면(재시작/타이틀로 이동 버튼).
+기물 드래그 이동(들어 올려 이동 가능한 칸에 놓기), 스킬 버튼(쿨타임 표시, 내 턴이 아닐 때 반투명 처리), 카드 선택 화면(증강/승급/이진선택 - 팀별 개별 진행, 선택 시 체크 표시 + 대기 상태), 보유 증강 확인 패널(백/흑 토글, 좌우 스크롤), 게임오버 화면(재시작/타이틀로 이동 버튼).
 
 ### VFX
 위협(적색)/쉴드(청색)/지휘(황색)/워프(연보라)/프로모션(색종이 폭죽) 5종 스킬 이펙트와 기물 선택 시 바닥 이펙트. 위협/쉴드는 실제 효과 지속시간과 정확히 동기화되어 표시된다.
@@ -50,6 +53,14 @@
 | 보유 증강 확인 | 환경설정 | 게임 종료 |
 | --- | --- | --- |
 | ![보유 증강 확인](docs/screenshots/10-augment-view.png) | ![환경설정](docs/screenshots/11-settings.png) | ![게임 종료](docs/screenshots/12-game-over.png) |
+
+| 튜토리얼 - 우노 | 우노 모드 | 색상 선택 |
+| --- | --- | --- |
+| ![튜토리얼 우노](docs/screenshots/13-tutorial-uno.png) | ![우노 모드](docs/screenshots/14-uno-board.png) | ![색상 선택](docs/screenshots/15-uno-color-select.png) |
+
+| 부활 기물 선택 | 부활 위치 선택 |
+| --- | --- |
+| ![부활 기물 선택](docs/screenshots/16-uno-revive-piece.png) | ![부활 위치 선택](docs/screenshots/17-uno-revive-tile.png) |
 
 ## 게임 다운로드
 
@@ -79,6 +90,8 @@ Assets/Scripts/
 ├── Data/           # AugmentData/AugmentDatabase/PromotionOptionData (ScriptableObject)
 ├── Game/           # GameManager, GameEndManager, GameOverUI
 ├── Network/        # BasicSpawner, ChessNetworkSync, GameStartController, MatchSettings, PlayerProfile (Fusion 연동/대전 설정/닉네임)
+├── Uno/            # 우노 카드 데이터/덱/규칙/매치 로직 (UnoCard, UnoDeck, UnoRules, UnoMatch)
+├── UnoGame/        # 우노 모드 턴 흐름과 UI (UnoTurnController, UnoUI, UnoCardView, RaceTileGlow)
 ├── Settings/       # SettingsManager, SettingsPanelUI (음량/해상도/전체화면)
 ├── Skill/          # PieceSkillManager(.Skills/.Status), QueenSkill, SkillUIManager(.TurnState/.SkillHandlers/.UI)
 └── UI/             # AugmentViewUI, RoomCodePanelUI, StartMenu, LobbyController, NicknameInputUI, PlayerNameplateUI, TutorialPanelUI
@@ -109,6 +122,7 @@ Assets/Scenes/
 | 10. 시너지 점검 | 10-05 | 왕의 보폭/지휘/승급 상호작용 버그 수정, 환경설정 "게임 나가기" 버튼, UNO 모드 규칙 기획과 카드 스프라이트 추가 |
 | 11. 휴전·워프 수정과 UI 정리 | 10-06 | 휴전 협정 중 처형/차원 암살 금지, 위협 상태 비숍 워프 차단, 휴전 남은 턴·현재 턴 표시 추가, 결과 화면 버튼과 환경설정 버튼 정리 |
 | 12. 최적화와 버그 수정 | 10-06 | 스크립트·텍스처 최적화(타일 조회, GC 감소, UI 아틀라스), 증강 등급이 매 판 고정되던 문제 수정, 연속 워프 쿨타임·오른쪽 비숍 워프 수정, 증강으로 넓어진 스킬 범위 표시, UNO 모드 구현 계획 수립 |
+| 13. 우노 체스 모드 | 10-07 | 우노 카드 데이터·덱 로직, 로비 모드 선택, 카드 UI와 턴 흐름, 카드 효과, 부활, UNO 경쟁과 패배 연출, 네트워크 동기화, 기물 드래그 이동 |
 
 ## 알려진 이슈 / 남은 과제
 

@@ -9,8 +9,11 @@ public partial class SkillUIManager
     public void ApplyMatchSettings()
     {
         bool on = MatchSettings.SkillEnabled;
-        foreach (var b in new[] { knightButton, bishopButton, rookButton, queenButton, kingButton, endTurnButton })
+        foreach (var b in new[] { knightButton, bishopButton, rookButton, queenButton, kingButton })
             if (b != null) b.gameObject.SetActive(on);
+
+        // 턴 종료 버튼은 스킬 모드와 우노 모드에서 쓴다 (우노: 1~4 카드로 최소 1회 이동한 뒤 남은 이동을 포기할 때)
+        if (endTurnButton != null) endTurnButton.gameObject.SetActive(on || MatchSettings.IsUno);
     }
 
     public void SetSkillUsedThisTurn()
@@ -55,6 +58,13 @@ public partial class SkillUIManager
     // 턴이 종료되어 흑팀은 스킬을 전혀 쓸 수 없는 문제가 있었다).
     public void OnPieceMoved(ChessPieces piece)
     {
+        // 우노 모드: 스킬 흐름(스킬 사용 창, 자동 턴 종료)을 거치지 않고 이동 횟수만 센다
+        if (UnoTurnController.Active)
+        {
+            GameManager.Instance?.PieceMoved();
+            return;
+        }
+
         HasMovedThisTurn = true;
         MovedPieceThisTurn = piece;
 
@@ -142,6 +152,7 @@ public partial class SkillUIManager
         int currentTurn = GameManager.Instance != null ? GameManager.Instance.CurrentTurn : -1;
         int myTeam = GameStartController.LocalTeam >= 0 ? GameStartController.LocalTeam : currentTurn;
         if (currentTurn != myTeam) return;
+        if (UnoTurnController.Active && !UnoTurnController.Instance.CanManualEndTurn) return; // 우노: 조건을 채워야 넘길 수 있다
 
         // 2026-10-05 수정 후 되돌림: 턴 종료 버튼은 "이번 턴엔 1회만 이동하고 전략적으로 넘긴다"는
         // 의도된 선택지라는 사용자 확인에 따라, 왕의 보폭/지휘의 강제 추가 이동 여부와 무관하게

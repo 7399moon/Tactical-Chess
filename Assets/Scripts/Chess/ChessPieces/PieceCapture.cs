@@ -59,6 +59,8 @@ public class PieceCapture : MonoBehaviour
             QueenSkill.Instance.NotifyPieceCaptured(attacker, victim);
         }
 
+        UnoTurnController.NoteCaptured(victim); // 우노 모드: 부활 후보로 기록
+
         if (AugmentManager.Instance != null)
         {
             AugmentManager.Instance.OnPieceCaptured(attacker, victim);
