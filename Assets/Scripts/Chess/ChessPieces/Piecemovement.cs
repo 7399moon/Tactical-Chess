@@ -29,6 +29,7 @@ public class PieceMovement : MonoBehaviour
             {
                 Debug.Log("대상 기물은 쉴드 상태여서 공격할 수 없습니다.");
                 CenterAnnouncer.Show("쉴드 효과로 보호받고 있어 공격할 수 없습니다.");
+                RevertVisualPosition(piece);
                 return;
             }
         }
@@ -37,6 +38,7 @@ public class PieceMovement : MonoBehaviour
         {
             Debug.Log("위협 상태로 인해 이동 불가능합니다.");
             CenterAnnouncer.Show("위협 효과로 인해 이번 턴에는 이동할 수 없습니다.");
+            RevertVisualPosition(piece);
             return;
         }
 
@@ -46,6 +48,7 @@ public class PieceMovement : MonoBehaviour
             {
                 Debug.Log("워프 직후에는 워프한 비숍만 이동할 수 있습니다.");
                 CenterAnnouncer.Show("워프 직후에는 워프한 비숍만 이동할 수 있습니다.");
+                RevertVisualPosition(piece);
                 return;
             }
         }
@@ -75,6 +78,7 @@ public class PieceMovement : MonoBehaviour
             {
                 Debug.LogWarning("지휘 스킬이 활성화된 상태에서는 지휘 대상 기물만 이동할 수 있습니다.");
                 CenterAnnouncer.Show("지휘 효과가 활성화된 동안에는 지정한 기물만 이동할 수 있습니다.");
+                RevertVisualPosition(piece);
                 return;
             }
         }
@@ -280,6 +284,19 @@ public class PieceMovement : MonoBehaviour
     }
 
     // 기물을 시작 위치에서 목표 위치까지 포물선을 그리며 이동시키는 연출 코루틴
+    // 2026-10-09 수정: 드래그 이동(ChessInteractionManager.Drag.cs)은 손을 뗀 지점까지 기물의
+    // transform을 미리 옮겨둔 뒤 기존 이동 실행 경로(MovePiece)를 그대로 재사용한다. 체스 규칙상으로는
+    // 합법적인 칸이라도(availableMoves 포함) 이 메서드 내부의 스킬 계층 검증(쉴드/위협/워프 대기/지휘
+    // 등)에서 이동이 거부되면, 지금까지는 기물이 드롭 위치 근처에 그대로 남아 "이동(캡처)이 안 되는
+    // 것처럼" 보이는 문제가 있었다(알려진 제한 사항으로 기록되어 있었음). 거부되는 모든 지점에서
+    // 기물을 원래(논리적) 칸으로 애니메이션과 함께 되돌려, 클릭 이동이든 드래그 이동이든 항상 시각적
+    // 위치가 실제 보드 상태와 일치하도록 한다.
+    private void RevertVisualPosition(ChessPieces piece)
+    {
+        if (piece == null || board == null) return;
+        StartCoroutine(MovePieceAnimated(piece, board.GetTileCenter(piece.currentX, piece.currentY)));
+    }
+
     private IEnumerator MovePieceAnimated(ChessPieces piece, Vector3 targetPosition)
     {
         Vector3 startPosition = piece.transform.position;

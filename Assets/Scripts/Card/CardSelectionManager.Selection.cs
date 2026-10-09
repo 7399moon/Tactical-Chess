@@ -435,6 +435,7 @@ public partial class CardSelectionManager
             cardSelectionPanel.SetActive(false);
 
         SetWaitingStatus(false);
+        SetRerollButtonVisible(false);
 
         // 색상 선택에서 줄였던 카드 크기를 되돌린다
         if (cardList != null)

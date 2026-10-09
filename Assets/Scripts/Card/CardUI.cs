@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
@@ -35,6 +36,14 @@ public class CardUI : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler, 
     private Vector2 baseOutlineDistance;
     private bool outlineDistanceCached;
     private bool isPicked = false;                         // 이 카드가 "고른 상태"(확인 버튼을 누르기 전)인지 여부
+
+    // 호버 시 카드가 커지는 연출용 상태. baseScale은 SetupCard가 호출되는 시점의 localScale을
+    // "원래 크기"로 캐싱한다 - 우노 와일드 색상 선택(ShowColorChoice)은 카드 간격을 두려고
+    // SetupCard 호출 '전'에 0.7배로 미리 줄여두므로, 이 값이 모드별 원래 크기를 자동으로 반영한다.
+    private Vector3 baseScale = Vector3.one;
+    private Coroutine scaleRoutine;
+    private const float HoverScaleMultiplier = 1.2f;
+    private const float HoverShrinkDuration = 0.2f;
     #endregion
 
     #region 유니티 생명주기
@@ -114,6 +123,15 @@ public class CardUI : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler, 
 
         if (cardOutline != null)
             cardOutline.enabled = false;
+
+        // 매 라운드 카드 슬롯이 재사용되므로, 진행 중이던 호버 축소 애니메이션을 정리하고
+        // 이 시점의 스케일(색상 선택이면 0.7배 등)을 "원래 크기"로 다시 캐싱한다.
+        if (scaleRoutine != null)
+        {
+            StopCoroutine(scaleRoutine);
+            scaleRoutine = null;
+        }
+        baseScale = transform.localScale;
     }
 
     // 카드의 클릭 및 호버 입력 활성화 상태를 변경
@@ -159,22 +177,47 @@ public class CardUI : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler, 
     // 마우스 호버 시 아웃라인 연출
     public void OnPointerEnter(PointerEventData eventData)
     {
-        if (!isInteractable || isSelected || isPicked) return;
+        if (!isInteractable) return;
 
-        if (cardOutline != null)
+        if (!isSelected && !isPicked && cardOutline != null)
         {
             cardOutline.effectColor = hoverColor;
             cardOutline.enabled = true;
         }
+
+        // 카드 확대: 즉시 1.2배로 커진다(축소와 달리 커질 때는 별도 유예 시간 요청이 없었음).
+        if (scaleRoutine != null) { StopCoroutine(scaleRoutine); scaleRoutine = null; }
+        transform.localScale = baseScale * HoverScaleMultiplier;
     }
 
-    // 마우스 호버 이탈 시 아웃라인 해제
+    // 마우스 호버 이탈 시 아웃라인 해제 및 카드 크기를 0.2초에 걸쳐 원래 크기로 되돌림
     public void OnPointerExit(PointerEventData eventData)
     {
-        if (!isInteractable || isSelected || isPicked) return;
+        if (!isInteractable) return;
 
-        if (cardOutline != null)
+        if (!isSelected && !isPicked && cardOutline != null)
             cardOutline.enabled = false;
+
+        if (scaleRoutine != null) StopCoroutine(scaleRoutine);
+        scaleRoutine = StartCoroutine(ShrinkToBaseScaleRoutine());
+    }
+
+    // 커졌던 카드를 HoverShrinkDuration(0.2초) 동안 부드럽게 원래 크기로 되돌리는 코루틴
+    private IEnumerator ShrinkToBaseScaleRoutine()
+    {
+        Vector3 start = transform.localScale;
+        float elapsed = 0f;
+
+        while (elapsed < HoverShrinkDuration)
+        {
+            elapsed += Time.unscaledDeltaTime;
+            float t = Mathf.Clamp01(elapsed / HoverShrinkDuration);
+            transform.localScale = Vector3.Lerp(start, baseScale, t);
+            yield return null;
+        }
+
+        transform.localScale = baseScale;
+        scaleRoutine = null;
     }
 
     // 카드 클릭 시 아웃라인 연출 및 매니저 콜백 호출

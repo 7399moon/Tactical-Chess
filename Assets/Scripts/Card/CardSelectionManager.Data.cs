@@ -169,7 +169,11 @@ public partial class CardSelectionManager
         // 등급(레전더리/"플래티넘")으로 고정되어 보이는" 버그였다. MatchSession.AugmentSeed(매치마다
         // 새로 뽑혀 네트워크 대전 중에도 양쪽 클라이언트에 동일하게 전파되는 값)를 함께 섞어, 등급 결정이
         // 매치마다 달라지면서도 같은 매치 안 두 클라이언트끼리는 여전히 일치하도록 한다.
-        int seed = unchecked(MatchSession.AugmentSeed + (GameManager.Instance != null ? GameManager.Instance.TurnCount : 0));
+        // 2026-10-09 수정: 여기서 GameManager.Instance.TurnCount를 매번 직접 읽으면, TriggerAugmentCheckpoint
+        // 호출 "직후"(EndTurn의 turnCount++) turnCount가 바뀌어버려서, 이미 떠 있는 증강 선택 화면에서
+        // 리롤을 누르면 최초 표시 때와 다른 등급이 계산되는 버그가 있었다(checkpointSeedTurnCount 필드
+        // 선언부 주석 참고). 체크포인트 시작 시점에 한 번만 캐싱된 값을 대신 사용한다.
+        int seed = unchecked(MatchSession.AugmentSeed + checkpointSeedTurnCount);
         var rng = new System.Random(seed);
         int index = rng.Next(allowed.Count);
         return allowed[index];
@@ -187,6 +191,40 @@ public partial class CardSelectionManager
     {
         int rarityBit = 1 << (int)rarity;
         return ((int)allowedRarities & rarityBit) != 0;
+    }
+    #endregion
+
+    #region 증강 리롤
+    // "리롤" 버튼 클릭 시 호출된다. 이번 체크포인트의 등급(GetCheckpointRarity가 양쪽 클라이언트에서
+    // 항상 같은 값으로 결정론적으로 고정해둔 값 - PickAugments 참고)은 그대로 유지한 채, 그 등급
+    // 안에서 카드 4장을 다시 무작위로 뽑아 보여준다(PickAugments의 풀(pool) 추출 방식 덕분에 한 번의
+    // 리롤 안에서 같은 증강이 중복으로 뽑히지는 않는다). 증강 선택(Augment) 화면에서만 동작하며,
+    // 이미 "고른" 카드가 있었다면 해제한다. 개별 증강 구성은 원래부터 클라이언트마다 독립적으로
+    // 뽑히는 설계(등급만 같으면 되고 카드까지 같을 필요는 없음 - PickAugments 주석 참고)이므로,
+    // 리롤도 네트워크 동기화 없이 이 클라이언트 화면에서만 처리한다.
+    public void RerollAugmentCards()
+    {
+        if (!IsSelecting || isClosing || currentMode != CardSelectionMode.Augment) return;
+        if (rerollButton != null && !rerollButton.interactable) return; // 이미 1회 사용됨
+
+        ResetPickedCard();
+        PopulateAugmentCards();
+
+        for (int i = 0; i < cardList.Length; i++)
+        {
+            CardUI card = cardList[i];
+            if (card == null) continue;
+            card.SetupCard(OnCardClicked);
+            card.SetInteractable(true);
+        }
+
+        SoundManager.Instance?.PlayAugmentCardAppear();
+
+        // 2026-10-09 수정: 리롤 버튼은 화면당(=체크포인트의 카드 한 벌당) 1회만 사용 가능해야 하므로,
+        // 사용 즉시 비활성화한다. 다음에 새 카드 선택 화면이 열릴 때(SetRerollButtonVisible(true))
+        // 다시 활성화된다.
+        if (rerollButton != null)
+            rerollButton.interactable = false;
     }
     #endregion
 }

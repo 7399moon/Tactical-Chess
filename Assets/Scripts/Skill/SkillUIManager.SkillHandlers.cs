@@ -212,11 +212,17 @@ public partial class SkillUIManager
                 range += AugmentManager.Instance.GetRookShieldRangeBonus(piece.team);
         }
 
+        // 2026-10-09 수정: 레어8(자체 방벽, rook_self_shield) 보유 시 TryUseShield가 이미 자기 자신을
+        // 쉴드 대상으로 허용하고 있었지만(allowSelfTarget), 이 하이라이트 계산은 항상 자기 자신의
+        // 칸(dx=0,dy=0)을 건너뛰어 실제로 사용 가능한 범위인데도 화면엔 표시되지 않는 문제가 있었다.
+        bool includeSelfTile = skillType == PendingSkillType.Rook
+            && AugmentManager.Instance != null && AugmentManager.Instance.HasAugment(piece.team, "rook_self_shield");
+
         for (int dx = -range; dx <= range; dx++)
         {
             for (int dy = -range; dy <= range; dy++)
             {
-                if (dx == 0 && dy == 0) continue;
+                if (dx == 0 && dy == 0 && !includeSelfTile) continue;
 
                 int x = piece.currentX + dx;
                 int y = piece.currentY + dy;

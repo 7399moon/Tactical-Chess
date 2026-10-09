@@ -306,7 +306,12 @@ public partial class PieceSkillManager
         // 다른 세 스킬과 동일한 고정 오프셋으로 맞춰 피규어 머리 바로 위에 보이도록 수정한다.
         if (commandVfxInstanceByTeam.TryGetValue(king.team, out GameObject existingCommandVfx) && existingCommandVfx != null)
             Destroy(existingCommandVfx);
-        commandVfxInstanceByTeam[king.team] = SpawnPieceVfx(commandVfxPrefab, target, Vector3.up * 0.1f);
+        GameObject commandVfx = SpawnPieceVfx(commandVfxPrefab, target, Vector3.up * 0.1f);
+        // 2026-10-09 수정: 지휘 이펙트만 요청에 따라 기존 크기의 1.2배로 키운다(위협/쉴드 등 다른
+        // 스킬 VFX는 그대로 유지 - SpawnPieceVfx 공용 함수는 건드리지 않고 이 스폰 결과에만 적용).
+        if (commandVfx != null)
+            commandVfx.transform.localScale *= 1.2f;
+        commandVfxInstanceByTeam[king.team] = commandVfx;
 
         SoundManager.Instance?.PlayCommand();
         NotifySkillUsed(king.team);

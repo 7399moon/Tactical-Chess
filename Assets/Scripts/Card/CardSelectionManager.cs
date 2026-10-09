@@ -65,6 +65,9 @@ public partial class CardSelectionManager : MonoBehaviour
 
     [Header("네트워크 대기 표시 (선택 사항)")]
     [SerializeField] private GameObject waitingStatusIndicator; // "상대방 선택 대기 중" 안내 오브젝트 - 없으면 표시만 생략
+
+    [Header("증강 리롤")]
+    [SerializeField] private Button rerollButton; // 증강 선택 화면(왼쪽 아래)에서만 보이는 리롤 버튼 - 없으면 리롤 기능 생략
     #endregion
 
     #region Private Fields
@@ -91,6 +94,18 @@ public partial class CardSelectionManager : MonoBehaviour
     // 제시된 증강 및 중복 방지 기록
     private List<AugmentData> currentOfferedAugments;
     private readonly HashSet<string> usedAugmentIds = new HashSet<string>();
+
+    // 2026-10-09 수정: GetCheckpointRarity()가 매번 GameManager.Instance.TurnCount를 직접 읽었는데,
+    // TriggerAugmentCheckpoint()는 GameManager.EndTurn()의 turnCount++보다 "먼저" 호출되지만, 그
+    // 직후 turnCount++가 곧바로 실행되어 사용자가 실제로 화면을 보고 있는 시점에는 이미 turnCount가
+    // 1 증가해 있다. 최초 카드 표시(PopulateAugmentCards)는 TriggerAugmentCheckpoint 호출 "도중"에
+    // 끝나므로 증가 전 값으로 계산되지만, 리롤 버튼(RerollAugmentCards)은 그보다 한참 뒤(사용자가
+    // 버튼을 누른 시점)에 같은 GetCheckpointRarity()를 다시 호출해 "증가된" turnCount로 계산해버려서
+    // 서로 다른(그리고 리롤할 때마다는 동일하게 고정된) 등급이 나오는 버그가 있었다(신고: "골드
+    // 증강이었는데 리롤하면 브론즈로 바뀌고 이후 계속 브론즈만 나옴"). 체크포인트 시작 시점의
+    // turnCount를 한 번만 캐싱해두고, 같은 체크포인트 동안의 모든 등급 계산(최초 표시 + 리롤 + 다음
+    // 팀의 최초 표시)이 항상 이 고정값을 쓰도록 한다.
+    private int checkpointSeedTurnCount;
 
     // 증강 체크포인트 진행 상태(TriggerAugmentCheckpoint 참고): 이번 체크포인트에서 아직 선택을
     // 완료하지 못한 팀 목록. 로컬 테스트 모드에서는 순차 진행 순서로도 쓰인다.
@@ -136,6 +151,10 @@ public partial class CardSelectionManager : MonoBehaviour
             confirmButton.onClick.AddListener(OnConfirmPressed);
             confirmButton.interactable = false;
         }
+
+        if (rerollButton != null)
+            rerollButton.onClick.AddListener(RerollAugmentCards);
+        SetRerollButtonVisible(false);
 
         if (cardSelectionPanel != null)
             cardSelectionPanel.SetActive(false);
@@ -211,6 +230,9 @@ public partial class CardSelectionManager : MonoBehaviour
         if (!promotion)
             SoundManager.Instance?.PlayAugmentCardAppear();
 
+        // 리롤 버튼은 증강 선택(프로모션이 아닐 때)에서만 보인다.
+        SetRerollButtonVisible(!promotion);
+
         if (promotion)
             PopulatePromotionCards();
         else
@@ -250,6 +272,7 @@ public partial class CardSelectionManager : MonoBehaviour
         isClosing = false;
         ResetPickedCard();
         currentMode = CardSelectionMode.PieceChoice;
+        SetRerollButtonVisible(false);
 
         GameManager.Instance?.PauseTimer();
 
@@ -288,6 +311,7 @@ public partial class CardSelectionManager : MonoBehaviour
         ResetPickedCard();
         currentMode = CardSelectionMode.ColorChoice;
         colorChoiceCallback = onChosen;
+        SetRerollButtonVisible(false);
 
         GameManager.Instance?.PauseTimer();
 
@@ -320,6 +344,12 @@ public partial class CardSelectionManager : MonoBehaviour
     public void TriggerAugmentCheckpoint()
     {
         if (!MatchSettings.AugmentEnabled) return; // 증강 시스템 OFF
+
+        // 이번 체크포인트 동안(리롤/다음 팀 표시 포함) 등급 계산에 항상 쓸 turnCount를 지금(아직
+        // GameManager.EndTurn()이 turnCount++를 실행하기 전) 캐싱해둔다 - checkpointSeedTurnCount
+        // 필드 선언부 주석 참고.
+        checkpointSeedTurnCount = GameManager.Instance != null ? GameManager.Instance.TurnCount : 0;
+
         teamsAwaitingPieceChoice.Clear();
         teamsAwaitingBoardTarget.Clear();
 
@@ -368,6 +398,19 @@ public partial class CardSelectionManager : MonoBehaviour
     {
         if (waitingStatusIndicator != null)
             waitingStatusIndicator.SetActive(value);
+    }
+
+    // 증강 선택 화면에서만 리롤 버튼을 보여준다(프로모션/이진 선택/색상 선택에는 없음).
+    // 2026-10-09 수정: 리롤은 체크포인트(화면)당 1회로 제한해야 하므로, 화면을 "새로" 보여줄 때마다
+    // (= 매번 ShowCardSelection으로 새 카드 4장이 올라올 때) interactable도 함께 true로 리셋한다 -
+    // 실제 1회 제한(사용 후 false로 바꾸는 쪽)은 RerollAugmentCards()에서 처리한다.
+    private void SetRerollButtonVisible(bool value)
+    {
+        if (rerollButton == null) return;
+
+        rerollButton.gameObject.SetActive(value);
+        if (value)
+            rerollButton.interactable = true;
     }
     #endregion
 }

@@ -47,6 +47,23 @@ public partial class SkillUIManager : MonoBehaviour
     [SerializeField] private Outline kingActiveOutline;
     #endregion
 
+    #region 전역 버튼 피드백 제외 목록
+    // 스킬 버튼(나이트/비숍/룩/퀸/킹)은 기존에 이미 "내 턴 아닐 때 반투명해짐"(CanvasGroup.alpha),
+    // "쿨타임/조건에 따라 interactable 토글" 등 자체적인 상태 표현이 있어, 전역 호버/클릭 피드백
+    // (UIButtonFeedback - 호버 시 어두워짐, 클릭 시 0.95배)을 추가로 적용하니 기존 느낌과 달라진다는
+    // 피드백을 받고 되돌렸다. GlobalButtonFeedbackInstaller가 씬의 모든 Button을 자동으로 찾아 붙일 때
+    // 이 목록에 있는 버튼은 건너뛴다. 턴 종료 버튼(endTurnButton)은 기존 코드에서도 "스킬 버튼"으로
+    // 취급하지 않으므로(SetSkillButtonsDimmed 참고) 제외 목록에 넣지 않는다 - 전역 피드백 그대로 적용됨.
+    public IEnumerable<Button> SkillButtonsExcludedFromGlobalFeedback()
+    {
+        if (knightButton != null) yield return knightButton;
+        if (bishopButton != null) yield return bishopButton;
+        if (rookButton != null) yield return rookButton;
+        if (queenButton != null) yield return queenButton;
+        if (kingButton != null) yield return kingButton;
+    }
+    #endregion
+
     #region 이벤트 및 상태 플래그
     public event Action<PendingSkillType> OnSkillPendingChanged;
 

@@ -25,10 +25,11 @@ public class BoardInputHandler : MonoBehaviour
     [SerializeField] private LayerMask hoverableMask;
 
     [Header("Drag Settings")]
-    // 드래그 중 기물이 보드 위로 떠 있는 높이. 가장 큰 기물(킹, 바닥 기준 높이 약 3.5)보다도 높게 띄워야
+    // 드래그 중 기물이 보드 위로 떠 있는 높이. 가장 큰 기물(킹, 바닥 기준 높이 약 3.48)보다는 높아야
     // 드래그 중인 기물이 다른 기물들의 머리 위를 그냥 지나가며, 다른 기물 메쉬와 겹쳐 부딪히는 것처럼
-    // 보이지 않는다.
-    [SerializeField] private float dragLiftHeight = 4.0f;
+    // 보이지 않는다. 다만 필요 이상으로 높이면 기물이 과하게 붕 뜬 느낌이 들어, 킹 높이보다 살짝만
+    // 더 높은 값(약간의 여유)으로 설정한다.
+    [SerializeField] private float dragLiftHeight = 3.6f;
     #endregion
 
     #region 내부 상태 필드

@@ -29,6 +29,7 @@ public class UnoUI : MonoBehaviour
     private const float ExpandedY = -50f;        // 펼친 상태 (보드의 앞줄 기물을 너무 가리지 않게 카드 아랫부분은 화면 밖에 둔다)
     private const float HoverLift = 38f;         // 펼친 상태에서 마우스를 올린 카드가 더 올라오는 높이
     private const float SelectLift = 70f;        // 1번 클릭(선택)한 카드가 올라오는 높이
+    private const float HoverSpreadDeg = 7f;     // 호버한 카드 좌/우 쪽 카드 전체를 밀어내는 각도(부채꼴 틈)
     private const int MaxPileObjects = 10;       // 화면에 표시하는 버림 더미 카드 수
     private const float FlyDuration = 0.32f;     // 카드가 더미로 날아가는 시간
     private static readonly Color Gold = new Color(1f, 0.82f, 0.25f, 1f);
@@ -664,9 +665,15 @@ public class UnoUI : MonoBehaviour
         float step = n > 1 ? Mathf.Min(FanStepDeg, FanMaxHalfDeg * 2f / (n - 1)) : 0f;
         float baseY = expanded ? ExpandedY : CollapsedY;
 
+        // 호버 중인 카드의 인덱스(없으면 -1) - 그 좌/우 쪽 카드들을 옆으로 밀어내 호버한 카드가
+        // 올라올 자리를 만든다(부채꼴 틈이 벌어지는 연출).
+        int hoveredIndex = (expanded && hovered != null) ? views.IndexOf(hovered) : -1;
+
         for (int i = 0; i < n; i++)
         {
             float angle = (i - (n - 1) * 0.5f) * step;        // 가운데 카드가 0도
+            if (hoveredIndex >= 0 && i != hoveredIndex)
+                angle += i < hoveredIndex ? -HoverSpreadDeg : HoverSpreadDeg;
             float rad = angle * Mathf.Deg2Rad;
             float x = Mathf.Sin(rad) * FanRadius;
             float y = (Mathf.Cos(rad) - 1f) * FanRadius + baseY;
