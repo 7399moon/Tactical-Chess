@@ -240,7 +240,7 @@ public class GameManager : MonoBehaviour
     }
 
     // 새 매치를 시작할 때 턴 진행 상태를 초기 상태로 되돌린다.
-    // (이전 매치의 턴 수/휴전 카운트/앙파상 타깃이 새 매치에 그대로 남아있던 문제 수정)
+    // (턴 수/휴전 카운트/앙파상 타깃이 이전 매치의 값으로 남아있지 않도록 초기화한다.)
     public void ResetForNewMatch()
     {
         armisticeTurns = 0;
@@ -285,10 +285,8 @@ public class GameManager : MonoBehaviour
         {
             float h = fill.rectTransform.rect.height;
             float wh = fillWave.rect.height;
-            // 2026-10-02 수정: wave는 하단 피벗(0.5, 0)이라 anchoredPosition.y가 곧 wave의 "아랫변" 위치.
-            // 기존엔 fill 윗면(normalizedTime * h)보다 wh*0.6만큼 아래에 둬서 wave가 액체 속에 파묻힌 것처럼
-            // 보였음 - wave 아랫변을 fill 윗면과 정확히 일치시키도록 오프셋 제거(가득 찼을 때만 바 밖으로
-            // 안 튀어나오게 h - wh로 계속 clamp).
+            // wave는 하단 피벗(0.5, 0)이라 anchoredPosition.y가 곧 wave의 "아랫변" 위치이므로,
+            // wave 아랫변을 fill 윗면과 일치시킨다(가득 찼을 때만 바 밖으로 안 튀어나오게 h - wh로 clamp).
             float y = Mathf.Min(normalizedTime * h, h - wh);
             fillWave.anchoredPosition = new Vector2(0f, y);
             fillWave.gameObject.SetActive(normalizedTime > 0.01f);

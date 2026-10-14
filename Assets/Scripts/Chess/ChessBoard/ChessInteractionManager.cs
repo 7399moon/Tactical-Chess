@@ -120,11 +120,6 @@ public partial class ChessInteractionManager : MonoBehaviour
 
         bool isMyTurn = GameManager.Instance != null && GameManager.Instance.CurrentTurn == GameStartController.LocalTeam;
 
-        // 2026-09-21 수정(1-2): 증강 효과로 인한 "승급 대상 지정" 등 보드 상호작용은 원래 턴 순서와
-        // 무관하게 곧바로(그 턴이 아니어도) 완료할 수 있어야 한다 - 그렇지 않으면 상대 턴 중에 이
-        // 창이 열려 있을 경우 영원히 완료할 수 없다. 내 팀이 지금 이런 "증강 효과 발동" 창을 대기
-        // 중이라면(IsTeamAwaitingPromotionTarget), 내 턴이 아니어도 클릭을 허용해 상대에게 중계한다.
-        // 이 창이 아니고 내 턴도 아니면 기존처럼 클릭 자체를 무시한다(다른 팀/다른 상황에는 영향 없음).
         bool isMyAugmentEffectWindow = IsTeamAwaitingPromotionTarget(GameStartController.LocalTeam);
 
         if (!isMyTurn && !isMyAugmentEffectWindow)
@@ -162,14 +157,6 @@ public partial class ChessInteractionManager : MonoBehaviour
     public void ForceDeselect() => DeselectPiece();
 
     // 해당 기물을 현재 선택할 수 있는지 조건(팀 소유권, 위협 스탯, 턴 권한, 행동 여부)을 검사.
-    //
-    // 중요: 이 메서드는 두 군데에서 호출된다.
-    //  1) Update()의 매 프레임 자동 선택 해제 검사 - 로컬 클라이언트 자신의 화면 상태 정리용
-    //  2) HandleClick() 내부 - 보드 클릭 RPC로 릴레이되어 "양쪽 클라이언트 모두 동일하게" 재현되는 로직
-    // 두 경우 모두 실제로 검사해야 하는 것은 "이 기물이 지금 행동 중인 팀(GameManager.CurrentTurn) 소속인가"이지,
-    // "이 기물이 내(로컬) 팀 소속인가(GameStartController.LocalTeam)"가 아니다. 예전에는 LocalTeam으로 검사했는데,
-    // 상대 팀의 클릭이 릴레이되어 재현될 때 내 화면에서는 그 기물이 "내 팀이 아니다"로 판정되어
-    // 잘못 선택 해제되거나 선택 자체가 거부되는 문제가 있었다(특히 흑팀 차례일 때 백팀 클라이언트 화면에서).
     private bool CanSelect(ChessPieces piece)
     {
         if (piece == null) return false;
@@ -196,9 +183,6 @@ public partial class ChessInteractionManager : MonoBehaviour
 
         if (piece.team == actingTeam && SkillUIManager.Instance != null && SkillUIManager.Instance.HasMovedThisTurn)
         {
-            // 2026-10-05 수정: 왕의 보폭 보너스 이동 대기 중인 킹, 또는 지휘로 2회 이동이 보장된 기물은
-            // "이번 턴에 이미 움직였다"는 이유로 재선택이 막혀서는 안 된다 - 그렇지 않으면 왕의 보폭/지휘가
-            // 안내만 뜨고 실제로는 절대 발동할 수 없는 죽은 기능이 된다(해당 기물 재선택이 전면 차단되므로).
             bool isPendingKingStride = SkillUIManager.Instance.IsKingDoubleMoveActive
                 && SkillUIManager.Instance.KingDoubleMovePiece == piece;
             bool isPendingCommandMove = PieceSkillManager.Instance != null
@@ -217,12 +201,6 @@ public partial class ChessInteractionManager : MonoBehaviour
     {
         if (piece == null || board == null) return;
         SelectedPiece = piece;
-
-        if (PieceSkillManager.Instance != null && PieceSkillManager.Instance.IsImmobilized(piece))
-        {
-            Debug.Log($"[{piece.name}] 기물은 위협(이동 불가) 상태입니다.");
-            return;
-        }
 
         Vector2Int? enPassantTarget = GameManager.Instance?.EnPassantTarget;
         availableMoves.Clear();

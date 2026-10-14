@@ -53,14 +53,9 @@ public class PieceMovement : MonoBehaviour
             }
         }
 
-        // 킹 지휘(commandedPieceByTeam/commandMovesLeftByTeam)는 2026-10-05 수정으로 팀별로 완전히
-        // 분리되어 있다. "지휘 대상만 이동 가능"이라는 제약은 지휘를 사용한(=지휘 대상이 속한) 팀의
-        // 턴에만 걸려야 하므로, 지금 행동 중인 팀을 기준으로 그 팀의 지휘 상태만 조회한다.
-        // 2026-09-23 수정: 예전에는 팀 구분 없이 무조건 지휘 대상 기물 외의 모든 이동을 막아버렸다.
-        // 섭정처럼 같은 턴 안에서 2회 이동이 곧바로 끝나는 경우가 아니라면(=일반적인 지휘 사용 시),
-        // 지휘를 사용한 직후 턴이 상대에게 넘어가도 이 제약이 그대로 걸려 있어 상대가 자기 턴에
-        // 아무 기물도 움직일 수 없이 완전히 멈춰버리는 심각한 버그였다. 이제 "지금이 지휘 대상 기물
-        // 팀의 턴인가"를 함께 확인해 상대 턴에는 이 제약이 전혀 작동하지 않도록 한다.
+        // 킹 지휘(commandedPieceByTeam/commandMovesLeftByTeam)는 팀별로 완전히 분리되어 관리된다.
+        // "지휘 대상만 이동 가능"이라는 제약은 지휘를 사용한(=지휘 대상이 속한) 팀의 턴에만 걸려야
+        // 하므로, 지금 행동 중인 팀을 기준으로 그 팀의 지휘 상태만 조회한다.
         int actingTeamForCommand = GameManager.Instance != null ? GameManager.Instance.CurrentTurn : piece.team;
         if (PieceSkillManager.Instance != null && PieceSkillManager.Instance.IsCommandActiveForTeam(actingTeamForCommand))
         {
@@ -111,10 +106,6 @@ public class PieceMovement : MonoBehaviour
         UnoTurnController.NoteMoved(piece); // 우노 모드: 이번 턴에 이 기물이 이동했음을 기록
 
         // 5. 지휘 스킬 횟수 차감
-        // 2026-09-23 수정: IsCommandActive만 보고 차감하면, 지휘 대상이 아닌 다른 기물(특히 상대 팀이
-        // 자기 턴에 정상적으로 두는 수)까지 지휘로 인한 이동으로 잘못 집계되어 지휘 잔여 횟수가
-        // 엉뚱하게 소모되고 그 턴 종료 처리까지 건너뛰는 문제가 있었다. 실제 지휘 대상 기물이 움직인
-        // 경우에만 차감하도록 제한한다.
         bool wasCommandMove = false;
         if (PieceSkillManager.Instance != null && PieceSkillManager.Instance.IsCommandActiveForTeam(piece.team)
             && piece == PieceSkillManager.Instance.GetCommandedPiece(piece.team))
@@ -138,11 +129,6 @@ public class PieceMovement : MonoBehaviour
         }
 
         // 8. 지휘 첫 번째 이동 완료 시 연속 이동 허용 (턴 종료 대기)
-        // 2026-10-05 수정: 예전에는 여기서 SkillUIManager.OnPieceMoved를 호출하지 않아
-        // HasMovedThisTurn이 계속 false로 남아, 지휘의 첫 번째 이동 직후에도 "아직 아무도 안
-        // 움직인 것"처럼 보여 다른 스킬 버튼(비숍/킹)이 계속 눌리는 문제가 있었다. 턴을 끝내지
-        // 않는 것(자동 종료 보류)은 CheckAutoTurnEnd의 isCommandTeamsTurn 가드가 이미 처리하므로,
-        // OnPieceMoved는 그대로 호출해도 안전하다.
         if (wasCommandMove && PieceSkillManager.Instance != null && PieceSkillManager.Instance.IsCommandActiveForTeam(piece.team))
         {
             Debug.Log("지휘 연속 이동: 1회 추가 이동 가능");
@@ -157,9 +143,6 @@ public class PieceMovement : MonoBehaviour
 
         // 8-1. 노말3 "왕의 보폭": ChessInteractionManager.ProcessKingDoubleMove가 이번 이동으로
         // 보너스 이동권을 부여했다면(IsKingDoubleMoveActive == true), 턴을 끝내지 않고 대기한다.
-        // 2026-10-05 수정: 위 8번과 동일한 이유로 OnPieceMoved를 호출해 HasMovedThisTurn을 갱신한다
-        // - 이래야 킹이 보너스 이동을 기다리는 동안 지휘/비숍 스킬 버튼이 비활성화된다
-        // (CheckAutoTurnEnd는 IsKingDoubleMoveActive 가드로 자동 종료를 막아주므로 안전하다).
         if (SkillUIManager.Instance != null && SkillUIManager.Instance.IsKingDoubleMoveActive)
         {
             Debug.Log("[왕의 보폭] 추가 이동 대기 중: 턴을 유지합니다.");
@@ -284,13 +267,6 @@ public class PieceMovement : MonoBehaviour
     }
 
     // 기물을 시작 위치에서 목표 위치까지 포물선을 그리며 이동시키는 연출 코루틴
-    // 2026-10-09 수정: 드래그 이동(ChessInteractionManager.Drag.cs)은 손을 뗀 지점까지 기물의
-    // transform을 미리 옮겨둔 뒤 기존 이동 실행 경로(MovePiece)를 그대로 재사용한다. 체스 규칙상으로는
-    // 합법적인 칸이라도(availableMoves 포함) 이 메서드 내부의 스킬 계층 검증(쉴드/위협/워프 대기/지휘
-    // 등)에서 이동이 거부되면, 지금까지는 기물이 드롭 위치 근처에 그대로 남아 "이동(캡처)이 안 되는
-    // 것처럼" 보이는 문제가 있었다(알려진 제한 사항으로 기록되어 있었음). 거부되는 모든 지점에서
-    // 기물을 원래(논리적) 칸으로 애니메이션과 함께 되돌려, 클릭 이동이든 드래그 이동이든 항상 시각적
-    // 위치가 실제 보드 상태와 일치하도록 한다.
     private void RevertVisualPosition(ChessPieces piece)
     {
         if (piece == null || board == null) return;

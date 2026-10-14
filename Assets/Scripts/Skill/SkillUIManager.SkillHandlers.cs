@@ -64,9 +64,8 @@ public partial class SkillUIManager
             (currentSelected.type == ChessPieceType.WhiteBishop || currentSelected.type == ChessPieceType.BlackBishop) &&
             currentSelected.team == actingTeam;
 
-        // 2026-10-06 수정: FindPiece(첫 번째로 찾은 비숍, 즉 항상 "왼쪽" 비숍)로 폴백하면 그 비숍이
-        // 쿨타임 중이거나 워프 가능한 칸이 없어도 그대로 선택되어 버려, 실제로는 사용 가능한 오른쪽
-        // 비숍이 있어도 선택될 수 없는 버그가 있었다(SkillUIManager.UI.cs의 FindUsableBishop 주석 참고).
+        // 쿨타임 중이거나 워프 가능한 칸이 없는 비숍은 제외하고, 실제로 사용 가능한 비숍을
+        // 찾아 선택한다(SkillUIManager.UI.cs의 FindUsableBishop 주석 참고).
         if (!isOwnBishop)
             currentSelected = FindUsableBishop(actingTeam);
 
@@ -92,16 +91,16 @@ public partial class SkillUIManager
     }
 
     // 비숍이 워프 가능한 타일 목록을 계산 (증강 보유 시 아군/적이 있는 칸도 포함)
-    // 2026-10-03 수정: 워프 직후에는 IsWarpPendingMove 제약으로 "방금 워프한 비숍"만 이동할 수 있는데,
-    // 워프 도착 칸에서 그 비숍이 둘 수 있는 합법적인 수가 하나도 없으면(사면이 기물에 막히는 등) 어떤
-    // 기물도 움직일 수 없는 상태로 게임이 멈춰버렸다. 그런 칸은 애초에 워프 후보에서 제외한다.
+    // 워프 직후에는 IsWarpPendingMove 제약으로 "방금 워프한 비숍"만 이동할 수 있으므로, 워프 도착
+    // 칸에서 그 비숍이 둘 수 있는 합법적인 수가 하나도 없는 칸(사면이 기물에 막히는 등)은 애초에
+    // 워프 후보에서 제외한다.
     public List<Vector2Int> GetWarpTiles(ChessPieces bishop, ChessBoard board)
     {
         List<Vector2Int> validWarpTiles = new List<Vector2Int>();
         if (bishop == null || board == null) return validWarpTiles;
 
-        // 2026-10-05 수정: 위협(이동 불가) 상태인 비숍은 PieceSkillManager.TryUseWarp에서 이제 워프
-        // 자체를 거부하므로, 하이라이트도 애초에 아무 칸도 보여주지 않아야 플레이어가 혼란스럽지 않다.
+        // 위협(이동 불가) 상태인 비숍은 PieceSkillManager.TryUseWarp에서 워프 자체를 거부하므로,
+        // 하이라이트도 애초에 아무 칸도 보여주지 않아야 플레이어가 혼란스럽지 않다.
         if (PieceSkillManager.Instance != null && PieceSkillManager.Instance.IsImmobilized(bishop))
             return validWarpTiles;
 
@@ -109,8 +108,8 @@ public partial class SkillUIManager
 
         // 레어4(워프 스왑)/레전더리2(차원 암살) 보유 시 아군/적이 있는 칸도 워프 후보로 노출
         bool canSwap = AugmentManager.Instance != null && AugmentManager.Instance.HasAugment(bishop.team, "bishop_warp_swap");
-        // 2026-10-05 수정: 차원 암살도 휴전 협정 중에는 TryUseWarp에서 거부되므로, 그 상태에서는
-        // 적이 있는 칸을 워프 후보로 노출하지 않는다.
+        // 차원 암살도 휴전 협정 중에는 TryUseWarp에서 거부되므로, 그 상태에서는 적이 있는 칸을
+        // 워프 후보로 노출하지 않는다.
         bool canAttack = AugmentManager.Instance != null && AugmentManager.Instance.HasAugment(bishop.team, "bishop_warp_attack") && !ceasefireActive;
 
         for (int i = 0; i < WarpDirections.Length; i++)
@@ -122,7 +121,7 @@ public partial class SkillUIManager
                 continue;
 
             ChessPieces occupant = board.GetPieceAt(targetX, targetY);
-            // 2026-10-05 수정: 스왑 대상 아군이 위협 상태면 TryUseWarp에서 거부되므로 후보에서도 제외.
+            // 스왑 대상 아군이 위협 상태면 TryUseWarp에서 거부되므로 후보에서도 제외.
             bool occupantImmobilized = PieceSkillManager.Instance != null && PieceSkillManager.Instance.IsImmobilized(occupant);
             bool isSwapCase = occupant != null && occupant.team == bishop.team && canSwap && !occupantImmobilized;
             bool isAttackCase = occupant != null && occupant.team != bishop.team && canAttack;
@@ -193,11 +192,9 @@ public partial class SkillUIManager
     }
 
     // 기물 주변 인접 타일 반환 (나이트 위협/룩 쉴드 스킬의 증강 범위 보너스를 반영)
-    // 2026-10-06 수정: 예전에는 항상 고정된 8방향 인접 타일만 반환해서, 레어1(위협 확장)/레어6(쉴드
-    // 확장) 증강으로 TryUseThreat/TryUseShield의 실제 판정 범위(range = 1 + bonus, 체비셰프 거리)가
-    // 넓어져도 화면에는 여전히 기본 1칸 범위만 하이라이트되는 표시 버그가 있었다(스킬 자체는 확장된
-    // 범위로 정상 작동하지만, 플레이어는 넓어진 범위를 볼 수 없어 혼란/오사용을 유발). 실제 판정과
-    // 동일한 공식으로 범위를 계산해 하이라이트에 반영한다.
+    // 레어1(위협 확장)/레어6(쉴드 확장) 증강으로 TryUseThreat/TryUseShield의 실제 판정 범위
+    // (range = 1 + bonus, 체비셰프 거리)가 넓어지는 것과 동일한 공식으로 범위를 계산해 하이라이트에
+    // 반영한다.
     public List<Vector2Int> GetSurroundingTiles(ChessPieces piece, PendingSkillType skillType = PendingSkillType.None)
     {
         List<Vector2Int> tiles = new List<Vector2Int>();
@@ -212,9 +209,9 @@ public partial class SkillUIManager
                 range += AugmentManager.Instance.GetRookShieldRangeBonus(piece.team);
         }
 
-        // 2026-10-09 수정: 레어8(자체 방벽, rook_self_shield) 보유 시 TryUseShield가 이미 자기 자신을
-        // 쉴드 대상으로 허용하고 있었지만(allowSelfTarget), 이 하이라이트 계산은 항상 자기 자신의
-        // 칸(dx=0,dy=0)을 건너뛰어 실제로 사용 가능한 범위인데도 화면엔 표시되지 않는 문제가 있었다.
+        // 레어8(자체 방벽, rook_self_shield) 보유 시 TryUseShield가 자기 자신을 쉴드 대상으로
+        // 허용하므로(allowSelfTarget), 이 하이라이트 계산에서도 자기 자신의 칸(dx=0,dy=0)을
+        // 건너뛰지 않고 포함한다.
         bool includeSelfTile = skillType == PendingSkillType.Rook
             && AugmentManager.Instance != null && AugmentManager.Instance.HasAugment(piece.team, "rook_self_shield");
 

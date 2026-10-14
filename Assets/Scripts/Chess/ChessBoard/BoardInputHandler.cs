@@ -10,8 +10,6 @@ public class BoardInputHandler : MonoBehaviour
     public event Action<Vector2Int> OnTileHoverChanged;
 
     // 드래그 중 매 프레임 발행: 드래그 대상 기물, 들어 올려진 월드 좌표, 현재 가리키고 있는 보드 칸.
-    // 실제로 이 기물이 드래그(이동) 가능한 상태인지는 구독 측(ChessInteractionManager)이
-    // SelectedPiece 비교로 판단한다 - 여기서는 입력 사실만 전달한다.
     public event Action<ChessPieces, Vector3, Vector2Int> OnPieceDragUpdate;
     // 드래그를 놓았을 때(마우스 버튼을 뗐을 때) 1회 발행: 드래그 대상 기물, 놓은 시점의 보드 칸(-1,-1이면 보드 밖/무효).
     public event Action<ChessPieces, Vector2Int> OnPieceDragEnd;
@@ -25,10 +23,7 @@ public class BoardInputHandler : MonoBehaviour
     [SerializeField] private LayerMask hoverableMask;
 
     [Header("Drag Settings")]
-    // 드래그 중 기물이 보드 위로 떠 있는 높이. 가장 큰 기물(킹, 바닥 기준 높이 약 3.48)보다는 높아야
-    // 드래그 중인 기물이 다른 기물들의 머리 위를 그냥 지나가며, 다른 기물 메쉬와 겹쳐 부딪히는 것처럼
-    // 보이지 않는다. 다만 필요 이상으로 높이면 기물이 과하게 붕 뜬 느낌이 들어, 킹 높이보다 살짝만
-    // 더 높은 값(약간의 여유)으로 설정한다.
+    // 드래그 중 기물이 보드 위로 떠 있는 높이.
     [SerializeField] private float dragLiftHeight = 3.6f;
     #endregion
 
@@ -41,14 +36,10 @@ public class BoardInputHandler : MonoBehaviour
     private Transform cachedHitTransform;
     private ChessPieces cachedHitPiece;
 
-    // 현재 드래그 중인 기물(없으면 null) 및 마지막으로 유효했던 호버 칸(마우스를 뗀 프레임에 레이캐스트가
-    // 보드 밖으로 벗어나 있어도 직전 칸 정보를 사용할 수 있도록 캐싱)
+    // 현재 드래그 중인 기물(없으면 null) 및 마지막으로 유효했던 호버 칸
     private ChessPieces dragPiece;
     private Vector2Int lastDragHoverTile = -Vector2Int.one;
-    // 드래그 중인 기물 자신의 콜라이더. 드래그 시작 시 비활성화해두지 않으면, 기물이 마우스를 따라
-    // 떠오른 뒤에는 Raycast가 (목표 타일이 아니라) 바로 이 기물 자신에게 매 프레임 다시 맞아버려서
-    // "지금 가리키는 칸"이 항상 원래 있던 칸으로 고정되는 문제가 있었다 - 그 결과 이동 가능 타일 위로
-    // 옮겨도 초록색으로 바뀌지 않고, 손을 떼도 항상 "이동 불가" 판정으로 원위치 복귀만 되었다.
+    // 드래그 중인 기물 자신의 콜라이더.
     private Collider dragPieceCollider;
     #endregion
 
@@ -74,8 +65,6 @@ public class BoardInputHandler : MonoBehaviour
         }
 
         // 매 프레임 현재 활성화된 메인 카메라를 다시 조회한다.
-        // (팀별로 백/흑 카메라를 켜고 끄며 전환하므로, 한 번 캐싱하면 카메라 전환 후에도
-        //  예전 카메라 기준으로 Raycast가 나가는 문제가 생길 수 있어 캐싱하지 않는다.)
         currentCamera = Camera.main;
         if (currentCamera == null) return;
 
@@ -156,7 +145,6 @@ public class BoardInputHandler : MonoBehaviour
 
     #region 드래그 상태 관리
     // 드래그 중인 기물이 있다면 "놓인 칸 없음(-1,-1)"으로 즉시 종료 이벤트를 발행해 원래 자리로 복귀시킨다.
-    // (환경설정 패널이 열리거나 스킬 모드로 전환되는 등 드래그를 더 이상 진행할 수 없는 상황에 사용)
     private void CancelDrag()
     {
         if (dragPiece == null) return;

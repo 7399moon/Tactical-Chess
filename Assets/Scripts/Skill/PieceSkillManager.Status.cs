@@ -28,7 +28,7 @@ public partial class PieceSkillManager
     }
 
     // 증강(섭정 등)에 의한 킹 지휘 기본 쿨타임 수치 변경. 반드시 보유한 팀(team)에만 적용되며,
-    // 다른 팀의 kingCommandCooldownBase에는 영향을 주지 않는다(2026-09-21 수정 1-3).
+    // 다른 팀의 kingCommandCooldownBase에는 영향을 주지 않는다.
     public void SetKingCommandCooldownBase(int team, int newCooldown)
     {
         if (team != 0 && team != 1) return;

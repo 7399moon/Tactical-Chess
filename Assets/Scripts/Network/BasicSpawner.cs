@@ -91,9 +91,6 @@ public class BasicSpawner : MonoBehaviour, INetworkRunnerCallbacks
 
         // 로비 씬은 씬 권한(호스트)만 로드하며, LoadSceneMode.Additive로 로드해 현재 씬(StartScene)을
         // 언로드하지 않는다. 참가자(클라이언트)는 별도 호출 없이 자동으로 동기화되어 함께 로드된다.
-        // (예전 코드는 StartGameArgs.Scene에 직접 씬을 지정해 기본 모드(Single)로 로드되어
-        //  StartScene 자체가 언로드되는 문제가 있었다 - BasicSpawner도 함께 사라져 대기 화면/팀
-        //  배정 로직이 전부 동작하지 않게 됨)
         if (_runner.IsSceneAuthority)
         {
             var scene = SceneRef.FromIndex(SceneUtility.GetBuildIndexByScenePath($"Assets/Scenes/{lobbySceneName}.unity"));
@@ -186,8 +183,6 @@ public class BasicSpawner : MonoBehaviour, INetworkRunnerCallbacks
 
     #region 대기 상태 갱신
     // 새 플레이어가 접속하면 현재 접속 인원에 따라 대기 상태를 갱신한다.
-    // (예전에는 여기서 플레이어 캐릭터(큐브) 프리팹을 스폰했으나, 실제 체스 게임과 무관한 Fusion 템플릿
-    //  잔재였고 게임 시작 시 화면에 불필요한 큐브가 보이는 원인이었다 - 스폰 로직 제거)
     public void OnPlayerJoined(NetworkRunner runner, PlayerRef player)
     {
         // 호스트 본인이 세션에 들어온 시점에 ChessNetworkSync를 1회 스폰한다(세션 전체 동안 유지 - 로비 RPC도 사용).
@@ -206,12 +201,10 @@ public class BasicSpawner : MonoBehaviour, INetworkRunnerCallbacks
     // 방 정원이 2명으로 고정되어 있어 누군가 나가면 인원은 항상 2명 미만이 되므로(호스트 혼자
     // 대기하다 나가는 경우는 애초에 존재하지 않음 - 나갈 상대가 있으려면 인원이 2명이었어야 함),
     // 별도 인원 체크 없이 곧바로 방을 완전히 종료하고 타이틀 화면으로 복귀한다("호스트/참가 상관없이
-    // 인원이 2명 미만이 되면 방이 사라지고 시작 화면으로 복귀" 요구사항 - 예전에는 세션/방 번호를
-    // 그대로 유지한 채 대기 화면만 다시 보여주는 "가벼운" 경로였으나, 두 이탈 경로의 결과를
-    // 통일하기 위해 제거함).
+    // 인원이 2명 미만이 되면 방이 사라지고 시작 화면으로 복귀" 요구사항).
     //
-    // 2026-10-01 로비 도입: 로비 단계(MatchSession.InMatch == false)에서 게스트가 나가면 호스트는 로비에 남고
-    // 게스트 슬롯/선택만 초기화한다(D-1). 게임 단계에서 나가면 기존처럼 양쪽 모두 타이틀로 복귀한다.
+    // 로비 단계(MatchSession.InMatch == false)에서 게스트가 나가면 호스트는 로비에 남고 게스트
+    // 슬롯/선택만 초기화한다. 게임 단계에서 나가면 양쪽 모두 타이틀로 복귀한다.
     public void OnPlayerLeft(NetworkRunner runner, PlayerRef player)
     {
         if (!MatchSession.InMatch && runner.IsServer)
@@ -251,8 +244,7 @@ public class BasicSpawner : MonoBehaviour, INetworkRunnerCallbacks
     // 같은 자리에서 대기 화면을 계속 보여줄 수 없다. 가장 견고한 방법은 GoToTitle()과 동일하게
     // 씬을 전부 새로 로드해 모든 매니저 상태를 깨끗하게 초기화하고 타이틀 화면(StartScene)에
     // 그대로 남겨두는 것이다 - 새 방을 자동으로 재호스팅하지 않는다("호스트/참가 상관없이 인원이
-    // 2명 미만이 되면 방이 사라지고 시작 화면으로 복귀" 요구사항: 예전에는 여기서 남은 참가자를
-    // 곧바로 새 방의 호스트로 자동 전환시켰으나, 두 이탈 경로의 결과를 통일하기 위해 제거함).
+    // 2명 미만이 되면 방이 사라지고 시작 화면으로 복귀" 요구사항에 맞춘다).
     //
     // 이 콜백이 호출되는 시점엔 Fusion이 이미 이 클라이언트의 러너를 종료 처리한 뒤이므로(그 결과로
     // 이 콜백 자체가 발생한 것), GoToTitle()과 달리 Runner.Shutdown()을 다시 호출할 필요는 없다 -

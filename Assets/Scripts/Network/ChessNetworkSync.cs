@@ -64,11 +64,6 @@ public class ChessNetworkSync : NetworkBehaviour
     }
 
     // 턴 종료 요청(시간 초과, 수동 "턴 종료" 버튼)을 모든 클라이언트에 동일하게 전파한다.
-    // 이 RPC 없이 각 클라이언트가 독립적으로 EndTurn()을 호출하면(특히 턴 타이머 시간 초과 시)
-    // 두 화면의 턴이 서로 다른 시점에 넘어가 완전히 어긋나게 된다.
-    // requestedTurnCount: 요청을 만든 시점의 GameManager.TurnCount. 양쪽 클라이언트가 거의 동시에
-    // 같은 턴 종료를 요청해 RPC가 두 번 도착해도, GameManager.EndTurnFromNetwork가 이 값으로
-    // "이미 처리된 요청인지"를 판별해 중복 종료를 막는다.
     [Rpc(RpcSources.All, RpcTargets.All)]
     public void RPC_RelayEndTurn(int requestedTurnCount)
     {

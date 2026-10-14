@@ -25,10 +25,6 @@ public partial class ChessInteractionManager
             return;
         }
 
-        // 2026-09-21 수정(1-2): 팀별 pendingPromotions 딕셔너리로 바뀌면서, "이 클릭이 지금 대기 중인
-        // 어떤 팀의 승급 요청 대상인가"를 클릭된 기물의 팀으로 직접 판별한다. 예전에는 팀 구분 없는
-        // 단일 플래그(isWaitingForPromotionTarget)라서, 누군가의 승급이 대기 중이기만 하면 그와 무관한
-        // 모든 클릭(다른 팀의 정상적인 이동/스킬 클릭 포함)까지 전부 여기서 삼켜버리는 문제가 있었다.
         if (clickedPiece != null && IsTeamAwaitingPromotionTarget(clickedPiece.team))
         {
             TryExecuteTargetPromotion(clickedPiece);
@@ -47,8 +43,6 @@ public partial class ChessInteractionManager
         int actingTeam = GameManager.Instance != null ? GameManager.Instance.CurrentTurn : 0;
 
         // 1. 액티브 스킬 발동 모드 처리
-        // (예전에는 "GameManager.CurrentTurn == 0"으로 고정되어 있어 흑팀 차례에는 스킬 클릭 분기 자체가
-        //  동작하지 않았다. 이 클릭은 이미 "현재 턴 팀"의 것으로 검증되어 릴레이된 클릭이므로 팀 제한 없이 처리한다)
         if (SkillUIManager.Instance != null && SkillUIManager.Instance.ActiveSkillType != PendingSkillType.None)
         {
             if (GameManager.Instance != null)
@@ -63,9 +57,6 @@ public partial class ChessInteractionManager
                         if (knight != null && clickedPiece != null && clickedPiece.team != knight.team)
                         {
                             // 유니크1 [다중 위협]: 보유 시 대상을 2명 순차 클릭으로 지정.
-                            // 2026-10-03 수정: 이미 선택해 둔 대상을 다시 클릭하면, 목표 인원(2명)을 다
-                            // 채우지 못했어도 "지금까지 고른 인원만으로 바로 발동"으로 해석한다. 기존에는
-                            // 사정거리 안에 적이 1명뿐이면 2번째 대상을 고를 수 없어 위협을 영영 쓸 수 없었다.
                             if (pendingMultiTargets.Contains(clickedPiece))
                             {
                                 if (PieceSkillManager.Instance != null && PieceSkillManager.Instance.TryUseThreat(knight, new List<ChessPieces>(pendingMultiTargets), bypassMinimumCount: true))
@@ -100,8 +91,6 @@ public partial class ChessInteractionManager
                         ChessPieces rook = SkillUIManager.Instance.MovedPieceThisTurn;
                         if (rook != null && clickedPiece != null && clickedPiece.team == rook.team)
                         {
-                            // 2026-10-04 수정: 나이트 위협과 동일하게, 이미 선택해 둔 대상을 다시 클릭하면
-                            // 목표 인원(2명)을 다 채우지 못했어도 지금까지 고른 인원만으로 바로 발동한다.
                             if (pendingMultiTargets.Contains(clickedPiece))
                             {
                                 if (PieceSkillManager.Instance != null && PieceSkillManager.Instance.TryUseShield(rook, new List<ChessPieces>(pendingMultiTargets), bypassMinimumCount: true))
@@ -160,8 +149,6 @@ public partial class ChessInteractionManager
                         break;
 
                     case PendingSkillType.Queen:
-                        // 2026-10-05 수정: 아군 기물만 승급 대상으로 선택 가능하도록 actingTeam 검증 추가
-                        // (자세한 이유는 QueenSkill.TryPromoteTarget 주석 참고)
                         if (clickedPiece != null && QueenSkill.Instance != null && QueenSkill.Instance.TryPromoteTarget(clickedPiece, actingTeam))
                         {
                             Debug.Log("[Skill] 퀸 아우라 승급 성공");
@@ -178,8 +165,6 @@ public partial class ChessInteractionManager
                             skillSuccess = true;
 
                             // 레전더리5(섭정) 보유 여부는 AugmentManager에 직접 질의한다.
-                            // (예전에는 SkillUIManager.KeepTurnOnKingCommand라는 팀 구분 없는 플랫 bool을 사용해서,
-                            //  한쪽 팀만 섭정을 보유해도 다른 팀에게까지 "턴 유지" 효과가 새는 문제가 있었다)
                             bool keepTurn = AugmentManager.Instance != null && AugmentManager.Instance.HasAugment(actingTeam, "king_regency");
                             if (!keepTurn)
                                 SkillUIManager.Instance.OnEndTurnButtonClicked();
@@ -220,9 +205,6 @@ public partial class ChessInteractionManager
             {
                 ChessPieces movedPiece = SelectedPiece;
 
-                // 2026-10-05 수정: "왕의 보폭" 보너스 이동이 대기 중일 때는 그 킹 기물만 이동할 수
-                // 있어야 하는데, 예전에는 아무 기물이나 이동하면 그 보너스를 가로채 소모해버리는
-                // 버그가 있었다. 여기서 먼저 막아 아예 다른 기물의 이동 자체가 진행되지 않게 한다.
                 if (SkillUIManager.Instance != null && SkillUIManager.Instance.IsKingDoubleMoveActive
                     && SkillUIManager.Instance.KingDoubleMovePiece != movedPiece)
                 {
@@ -288,9 +270,6 @@ public partial class ChessInteractionManager
     {
         if (SkillUIManager.Instance == null) return;
 
-        // 2026-10-05 수정: 호출 시점에는 이미 HandleClick에서 "보너스 대기 중이면 그 킹만 이동
-        // 가능"함을 검증하고 들어온 상태이므로, 여기서 IsKingDoubleMoveActive가 true라면
-        // movedPiece는 반드시 KingDoubleMovePiece와 같은 킹이다 - 안전하게 소모 처리한다.
         if (SkillUIManager.Instance.IsKingDoubleMoveActive)
         {
             SkillUIManager.Instance.ClearKingDoubleMove();

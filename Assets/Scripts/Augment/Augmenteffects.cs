@@ -100,10 +100,8 @@ public class Augmenteffects : MonoBehaviour
         return true;
     }
 
-    // 폰 sacrificeCount개를 희생해서 지정한 랭크의 빈 칸에 새 기물 하나를 생성
-    // 2026-10-05 수정: 1랭크가 꽉 차 있으면(폰이 다 전진해 있거나 다른 기물이 막고 있는 경우 등)
-    // 예전에는 그대로 "효과 없음"으로 끝나버렸다. 1랭크에 빈 칸이 없으면 2랭크에서 빈 칸을 찾도록
-    // 폴백한다 (2랭크마저 없으면 기존과 동일하게 효과 없이 종료 - 폰도 희생되지 않음).
+    // 폰 sacrificeCount개를 희생해서 지정한 랭크의 빈 칸에 새 기물 하나를 생성.
+    // 1랭크에 빈 칸이 없으면 2랭크에서 빈 칸을 찾아 대신 사용한다(2랭크도 없으면 효과 없이 종료, 폰도 희생되지 않음).
     private static void TryConscript(ChessBoard board, int team, int sacrificeCount, ChessPieceType whiteNewType, ChessPieceType blackNewType, int rank)
     {
         ChessPieceType pawnType = team == 0 ? ChessPieceType.WhitePawn : ChessPieceType.BlackPawn;

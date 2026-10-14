@@ -176,8 +176,8 @@ public class GameOverUI : MonoBehaviour
     // 그 외(로컬/비네트워크 테스트)에는 이 클라이언트에서 바로 리셋한다.
     private void OnRestartButtonPressed()
     {
-        // 2026-10-06 수정: 재시작마다 증강 체크포인트 등급 시드(MatchSession.AugmentSeed)도 새로 뽑아야
-        // 재시작한 새 매치의 첫 증강이 이전 매치와 같은 등급으로 고정되지 않는다.
+        // 재시작마다 증강 체크포인트 등급 시드(MatchSession.AugmentSeed)를 새로 뽑아, 재시작한 새 매치의
+        // 첫 증강이 이전 매치와 같은 등급으로 고정되지 않게 한다.
         int freshAugmentSeed = UnityEngine.Random.Range(int.MinValue, int.MaxValue);
 
         if (GameStartController.LocalTeam >= 0 && ChessNetworkSync.Instance != null)
@@ -254,7 +254,6 @@ public class GameOverUI : MonoBehaviour
     }
 
     // 새 매치를 시작할 때 이전 매치의 결과 화면(승리/패배/무승부 패널)을 완전히 숨긴다.
-    // (이전 매치 종료 시 켜진 resultPanel/오버레이가 새 매치에서도 그대로 남아있던 문제 수정)
     public void HideResult()
     {
         StopAllCoroutines();

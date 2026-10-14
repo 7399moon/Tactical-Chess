@@ -35,9 +35,8 @@ public partial class SkillUIManager
         IsKingDoubleMoveActive = false;
         KingDoubleMovePiece = null;
 
-        // 2026-10-03 수정: 턴이 시작될 때(=상대/내 턴이 끝난 직후) 이전 턴에 켜져 있던 스킬 범위
-        // 하이라이트(위협/쉴드 등)가 그대로 남아있던 문제의 안전망. 정상 흐름이면 OnEndTurnButtonClicked()
-        // 에서 이미 정리되지만, 혹시 다른 경로로 턴이 넘어가도 여기서 한 번 더 확실히 지운다.
+        // 턴이 시작될 때 이전 턴의 스킬 범위 하이라이트(위협/쉴드 등)가 남아있지 않도록 안전망으로
+        // 한 번 더 지운다(정상 흐름에서는 OnEndTurnButtonClicked()에서 이미 정리된다).
         ChessInteractionManager.Instance?.ClearCustomHighlights();
 
         // 2026-10-04 추가: 킹 지휘를 사용한 뒤, 지휘 대상 팀의 턴이 돌아왔을 때 "이번 턴에 지휘 대상을
@@ -54,8 +53,7 @@ public partial class SkillUIManager
     }
 
     // 기물이 이동했을 때 호출. 백/흑 어느 팀이 움직였든 동일하게 "이동 완료 -> 스킬 사용 가능 창"
-    // 흐름을 거치도록 한다 (예전에는 팀 0(백)만 이 흐름을 타고, 그 외 팀은 스킬 기회 없이 곧장
-    // 턴이 종료되어 흑팀은 스킬을 전혀 쓸 수 없는 문제가 있었다).
+    // 흐름을 거치도록 한다
     public void OnPieceMoved(ChessPieces piece)
     {
         // 우노 모드: 스킬 흐름(스킬 사용 창, 자동 턴 종료)을 거치지 않고 이동 횟수만 센다
@@ -85,19 +83,8 @@ public partial class SkillUIManager
         CheckAutoTurnEnd(piece);
     }
 
-    // 중요: 이 판정은 절대 버튼의 interactable(표시 상태)을 읽어서는 안 된다.
-    // RefreshUIState()의 버튼 상태는 "이 클라이언트 화면에 보이는 내 팀 스킬 UI"를 위한 것이라
-    // GameStartController.LocalTeam 기준으로 계산되는데(내 턴이 아니면 전부 강제로 false), 이 메서드는
-    // OnPieceMoved를 통해 양쪽 클라이언트 모두에서 "실제로 방금 행동한 팀(=현재 턴 팀)"에 대해
-    // 동일하게 호출된다. 예전에 여기서 knightButton.interactable 등을 그대로 읽었을 때는,
-    // 상대 턴을 구경만 하는 클라이언트 화면에서는 그 버튼들이 항상 dimmed(비활성)라서
-    // "사용 가능한 스킬 없음"으로 잘못 판정해 관전 클라이언트가 상대 턴을 제멋대로 조기 종료시키는
-    // 네트워크 디싱크가 발생했다. 그래서 화면 표시와 무관하게 현재 턴 팀 기준으로 직접 재계산한다.
     private void CheckAutoTurnEnd(ChessPieces movedPiece)
     {
-        // 2026-09-23 수정: IsCommandActive만 보고 무조건 자동 종료를 막으면, 지휘를 사용한 팀이 아닌
-        // 상대 팀이 자기 턴에 정상적으로 이동을 마쳐도 이 턴이 자동으로 끝나지 않는 문제가 있었다.
-        // (지휘 대상 팀의 턴일 때만 "지휘가 끝날 때까지 자동 종료 보류"가 적용되어야 한다)
         var psm = PieceSkillManager.Instance;
         int actingTeamForCommandCheck = GameManager.Instance != null ? GameManager.Instance.CurrentTurn : movedPiece.team;
         bool isCommandTeamsTurn = psm != null && psm.IsCommandActiveForTeam(actingTeamForCommandCheck);
@@ -121,10 +108,6 @@ public partial class SkillUIManager
         if (!MatchSettings.SkillEnabled) return false; // 스킬 시스템 OFF: 이동만 하면 턴이 자동 종료된다
         int actingTeam = GameManager.Instance != null ? GameManager.Instance.CurrentTurn : 0;
 
-        // 2026-10-03 수정: 나이트/룩은 팀당 2기(승급 시 더 늘어날 수도 있음)라서 FindPiece의
-        // "보드를 좌표 순으로 스캔해 처음 찾은 한 개"로는 실제로 방금 이동한 기물을 특정할 수 없다.
-        // ResolveMovedOrFirst(SkillUIManager.UI.cs)가 이번 턴에 이동한 기물이 있으면 그 인스턴스를
-        // 우선 사용하도록 처리한다.
         ChessPieces knight = ResolveMovedOrFirst(ChessPieceType.WhiteKnight, actingTeam);
         ChessPieces rook = ResolveMovedOrFirst(ChessPieceType.WhiteRook, actingTeam);
 
@@ -154,9 +137,6 @@ public partial class SkillUIManager
         if (currentTurn != myTeam) return;
         if (UnoTurnController.Active && !UnoTurnController.Instance.CanManualEndTurn) return; // 우노: 조건을 채워야 넘길 수 있다
 
-        // 2026-10-05 수정 후 되돌림: 턴 종료 버튼은 "이번 턴엔 1회만 이동하고 전략적으로 넘긴다"는
-        // 의도된 선택지라는 사용자 확인에 따라, 왕의 보폭/지휘의 강제 추가 이동 여부와 무관하게
-        // 항상 턴 종료를 허용하도록 원래 동작으로 되돌린다.
         GameManager.Instance?.RequestEndTurn();
     }
 
@@ -167,9 +147,6 @@ public partial class SkillUIManager
     {
         ActiveSkillType = PendingSkillType.None;
 
-        // 2026-10-03 수정: 턴 종료 시 위협/쉴드 등 스킬 범위 하이라이트가 화면에 그대로 남아있던
-        // 문제 수정. 스킬 버튼을 다시 토글(OnSkillPendingChanged)하지 않고 턴이 끝나는 경우
-        // (자동 종료 포함) 하이라이트가 지워지지 않았으므로 턴 종료 시점에 명시적으로 정리한다.
         ChessInteractionManager.Instance?.ClearCustomHighlights();
 
         GameManager.Instance?.PieceMoved();

@@ -95,16 +95,10 @@ public partial class CardSelectionManager : MonoBehaviour
     private List<AugmentData> currentOfferedAugments;
     private readonly HashSet<string> usedAugmentIds = new HashSet<string>();
 
-    // 2026-10-09 수정: GetCheckpointRarity()가 매번 GameManager.Instance.TurnCount를 직접 읽었는데,
-    // TriggerAugmentCheckpoint()는 GameManager.EndTurn()의 turnCount++보다 "먼저" 호출되지만, 그
-    // 직후 turnCount++가 곧바로 실행되어 사용자가 실제로 화면을 보고 있는 시점에는 이미 turnCount가
-    // 1 증가해 있다. 최초 카드 표시(PopulateAugmentCards)는 TriggerAugmentCheckpoint 호출 "도중"에
-    // 끝나므로 증가 전 값으로 계산되지만, 리롤 버튼(RerollAugmentCards)은 그보다 한참 뒤(사용자가
-    // 버튼을 누른 시점)에 같은 GetCheckpointRarity()를 다시 호출해 "증가된" turnCount로 계산해버려서
-    // 서로 다른(그리고 리롤할 때마다는 동일하게 고정된) 등급이 나오는 버그가 있었다(신고: "골드
-    // 증강이었는데 리롤하면 브론즈로 바뀌고 이후 계속 브론즈만 나옴"). 체크포인트 시작 시점의
-    // turnCount를 한 번만 캐싱해두고, 같은 체크포인트 동안의 모든 등급 계산(최초 표시 + 리롤 + 다음
-    // 팀의 최초 표시)이 항상 이 고정값을 쓰도록 한다.
+    // 체크포인트 시작 시점의 turnCount를 한 번만 캐싱해둔다. GetCheckpointRarity()가 매번
+    // GameManager.Instance.TurnCount를 직접 읽으면, 체크포인트 도중 turnCount가 바뀌어(EndTurn의
+    // turnCount++) 리롤이나 다음 팀의 최초 표시에서 다른 등급이 계산될 수 있으므로, 같은 체크포인트
+    // 동안의 모든 등급 계산(최초 표시 + 리롤 + 다음 팀의 최초 표시)은 항상 이 고정값을 쓴다.
     private int checkpointSeedTurnCount;
 
     // 증강 체크포인트 진행 상태(TriggerAugmentCheckpoint 참고): 이번 체크포인트에서 아직 선택을
@@ -401,9 +395,9 @@ public partial class CardSelectionManager : MonoBehaviour
     }
 
     // 증강 선택 화면에서만 리롤 버튼을 보여준다(프로모션/이진 선택/색상 선택에는 없음).
-    // 2026-10-09 수정: 리롤은 체크포인트(화면)당 1회로 제한해야 하므로, 화면을 "새로" 보여줄 때마다
-    // (= 매번 ShowCardSelection으로 새 카드 4장이 올라올 때) interactable도 함께 true로 리셋한다 -
-    // 실제 1회 제한(사용 후 false로 바꾸는 쪽)은 RerollAugmentCards()에서 처리한다.
+    // 리롤은 체크포인트(화면)당 1회로 제한되므로, 화면을 "새로" 보여줄 때마다(= 매번 ShowCardSelection으로
+    // 새 카드 4장이 올라올 때) interactable도 함께 true로 리셋한다 - 실제 1회 제한(사용 후 false로
+    // 바꾸는 쪽)은 RerollAugmentCards()에서 처리한다.
     private void SetRerollButtonVisible(bool value)
     {
         if (rerollButton == null) return;

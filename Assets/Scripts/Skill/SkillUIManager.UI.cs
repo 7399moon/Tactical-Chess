@@ -36,11 +36,6 @@ public partial class SkillUIManager
         // 내 턴이면 스킬 버튼을 다시 원래 밝기로 복원 (쿨타임 등 개별 비활성화 사유는 interactable로만 표현)
         SetSkillButtonsDimmed(false);
 
-        // 2026-10-03 수정: 나이트/비숍/룩은 팀당 2기(승급 시 더 늘어날 수 있음)라서 FindPiece가
-        // 보드를 좌표 순으로 스캔해 "처음 찾은 한 개"만 반환하면, 실제로 이동/선택된 쪽이 아닌
-        // 엉뚱한 인스턴스를 기준으로 쿨타임 텍스트와 버튼 활성화를 계산하는 문제가 있었다
-        // (예: 비숍 스킬을 써도 쿨타임이 표시되지 않고 버튼이 계속 활성화 상태로 보이던 버그).
-        // 킹은 팀당 1기뿐이라 FindPiece로도 항상 올바르다.
         ChessPieces knight = ResolveMovedOrFirst(ChessPieceType.WhiteKnight, myTeam);
         ChessPieces bishop = ResolvePreferredBishop(myTeam);
         ChessPieces rook = ResolveMovedOrFirst(ChessPieceType.WhiteRook, myTeam);
@@ -74,9 +69,6 @@ public partial class SkillUIManager
         if (kingButton)
             kingButton.interactable = !HasUsedSkillThisTurn && !HasMovedThisTurn && !PieceSkillManager.Instance.IsOnCooldown(king);
 
-        // 2026-10-05 수정 후 되돌림: 턴 종료 버튼은 "이번 턴엔 1회만 이동하고 전략적으로 넘긴다"는
-        // 의도된 선택지라는 사용자 확인에 따라, 왕의 보폭/지휘 강제 이동 여부와 무관하게
-        // HasMovedThisTurn 조건만으로 원래 동작으로 되돌린다.
         if (endTurnButton)
             endTurnButton.interactable = HasMovedThisTurn;
 
@@ -145,12 +137,6 @@ public partial class SkillUIManager
         txt.text = cd > 0 ? $"{cd}" : string.Empty;
     }
 
-    // 2026-10-03 추가: 팀당 2기 이상 있을 수 있는 타입(나이트/룩)에 대해, 이번 턴에 실제로
-    // 이동한 기물이 있고 그 기물이 이 타입이라면 그 인스턴스를 그대로 반환한다. 그렇지 않으면
-    // (아직 아무도 안 움직였거나 다른 종류가 움직였으면) 기존처럼 FindPiece로 첫 번째 인스턴스를
-    // 임시로 보여준다 - 이 경우는 "어느 쪽이 맞다"고 특정할 수 없는 표시용 폴백일 뿐이고,
-    // 실제 사용 가능 여부 판정(isMovedKnight/isMovedRook)은 항상 MovedPieceThisTurn과의 참조
-    // 비교로 이루어지므로 이 폴백 값 자체가 오판정을 유발하지는 않는다.
     private ChessPieces ResolveMovedOrFirst(ChessPieceType whiteFormType, int team)
     {
         if (HasMovedThisTurn && MovedPieceThisTurn != null && MovedPieceThisTurn.team == team)
@@ -162,10 +148,6 @@ public partial class SkillUIManager
         return FindPiece(whiteFormType, team);
     }
 
-    // 2026-10-03 추가: 비숍 스킬 발동 대상을 고르는 ResolveBishopForSkill(SkillUIManager.SkillHandlers.cs)
-    // 과 동일한 우선순위(선택되어 있던 아군 비숍 우선, 없으면 보드에서 첫 번째로 찾은 비숍)로
-    // "표시용" 비숍을 고른다. 그래야 비숍이 2기 있을 때 실제로 스킬을 쓰게 될 비숍과 쿨타임
-    // 표시/버튼 활성화 기준이 항상 일치한다.
     private ChessPieces ResolvePreferredBishop(int actingTeam)
     {
         ChessPieces currentSelected = ChessInteractionManager.Instance != null ? ChessInteractionManager.Instance.SelectedPiece : null;
@@ -177,14 +159,6 @@ public partial class SkillUIManager
         return isOwnBishop ? currentSelected : FindUsableBishop(actingTeam);
     }
 
-    // 2026-10-06 수정: 비숍은 팀당 2기(승급 시 더 늘어날 수 있음)인데, 아무 비숍도 선택되어 있지
-    // 않은 상태에서 비숍 스킬 버튼을 누르면 기존에는 FindPiece가 보드를 좌표 순으로 스캔해 "처음
-    // 찾은 비숍"(항상 더 작은 x좌표, 즉 "왼쪽" 비숍)만 반환했다. 그 결과 왼쪽 비숍이 쿨타임 중이거나
-    // 인접 칸이 모두 막혀 있어도 그대로 왼쪽 비숍 기준으로 워프 범위를 계산해, 실제로는 당장 워프
-    // 가능한 오른쪽 비숍이 있어도 범위가 아예 비어 보이고(워프 불가능한 비숍이 선택된 상태) 클릭해도
-    // 아무 일도 일어나지 않는 버그가 있었다(백팀 기준 "오른쪽 비숍은 워프 자체가 불가능" 신고의 원인).
-    // 지금은 쿨타임 중이 아니고 실제로 워프 가능한 칸이 하나라도 있는 비숍을 우선 찾고, 그런 비숍이
-    // 없으면(둘 다 사용 불가, 또는 아직 둘 다 사용 가능) 기존처럼 첫 번째로 찾은 비숍으로 폴백한다.
     private ChessPieces FindUsableBishop(int team)
     {
         ChessBoard board = FindAnyObjectByType<ChessBoard>();

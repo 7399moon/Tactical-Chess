@@ -3,12 +3,8 @@ using UnityEngine;
 
 // ChessInteractionManager의 증강 즉시 승급 처리 partial 파일.
 // "카드 선택 완료 -> 승급시킬 아군 기물을 보드에서 직접 클릭" 흐름의 대기 상태와 유효성 검사를 담당한다.
-//
-// 2026-09-21 수정(1-2): 예전에는 이 대기 상태가 팀 구분 없는 단일 필드(isWaitingForPromotionTarget/
-// promotionTeam)였다. 같은 증강 체크포인트에서 White/Black이 동시에 서로 다른 즉시 승급형 증강을
-// 뽑는 것도 가능한데(예: 둘 다 "전격 승급" 계열을 고르는 경우), 그 경우 두 번째 StartTargetPromotionMode
-// 호출이 첫 번째 팀의 대기 상태를 그냥 덮어써 버려 그 팀은 영원히 승급 대상을 클릭할 수 없게 되는
-// 잠재 버그가 있었다. 팀별 Dictionary로 바꿔 두 팀이 동시에 각자의 승급 대상 클릭을 대기할 수 있게 했다.
+// 대기 상태는 팀(0=White, 1=Black)별 Dictionary로 관리해, 같은 증강 체크포인트에서 White/Black이
+// 동시에 서로 다른 즉시 승급형 증강을 뽑아도 두 팀이 각자 독립적으로 승급 대상 클릭을 대기할 수 있다.
 public partial class ChessInteractionManager
 {
     #region 승급 대상 클릭 대기 상태
@@ -42,8 +38,7 @@ public partial class ChessInteractionManager
     }
 
     // 지정된 팀이 현재 승급 대상 클릭을 대기 중인지 여부.
-    // 1-2 버그 수정의 핵심: 이 창이 열려 있는 동안은 그 팀의 보드 클릭이 CurrentTurn과 무관하게
-    // 허용되어야 한다(OnLocalBoardClicked 참고).
+    // 이 창이 열려 있는 동안은 그 팀의 보드 클릭이 CurrentTurn과 무관하게 허용되어야 한다(OnLocalBoardClicked 참고).
     public bool IsTeamAwaitingPromotionTarget(int team) => pendingPromotions.ContainsKey(team);
 
     // 클릭된 기물에 대해 승급 유효성을 검사하고 승급을 실행

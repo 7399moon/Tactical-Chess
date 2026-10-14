@@ -45,11 +45,10 @@ public partial class CardSelectionManager
     }
 
     // 이진 선택 카드 UI 데이터 바인딩
-    // 2026-09-21 수정: 이진 선택은 카드 4장 중 가운데 2장(인덱스 1, 2)만 사용해 중앙 정렬되어
-    // 보이도록 한다(기존엔 왼쪽 2장(0, 1)을 사용해 화면 왼쪽으로 쏠려 보였음). pieceChoiceOptions는
-    // cardList와 동일한 길이로 만들어 인덱스 1/2에만 값을 채우고 0/3은 null로 둔다 - 이렇게 하면
-    // CloseCardSelection의 Array.IndexOf(cardList, currentSelectedCard) 결과(1 또는 2)를 그대로
-    // pieceChoiceOptions의 인덱스로 써도 옵션이 정확히 대응된다(별도 오프셋 계산 불필요).
+    // 이진 선택은 카드 4장 중 가운데 2장(인덱스 1, 2)만 사용해 중앙 정렬되어 보이도록 한다.
+    // pieceChoiceOptions는 cardList와 동일한 길이로 만들어 인덱스 1/2에만 값을 채우고 0/3은 null로
+    // 둔다 - 이렇게 하면 CloseCardSelection의 Array.IndexOf(cardList, currentSelectedCard) 결과
+    // (1 또는 2)를 그대로 pieceChoiceOptions의 인덱스로 써도 옵션이 정확히 대응된다(별도 오프셋 계산 불필요).
     private void PopulatePieceChoiceCards(PromotionOptionData optionA, PromotionOptionData optionB)
     {
         pieceChoiceOptions = new PromotionOptionData[cardList.Length];
@@ -69,26 +68,19 @@ public partial class CardSelectionManager
     #endregion
 
     #region 증강 카드 뽑기
-    // 같은 등급 내에서만 무작위 증강 카드를 추출
+    // 같은 등급 내에서만 무작위 증강 카드를 추출.
     //
-    // 2026-09-21 수정(1-1): 이 메서드는 White/Black 각자의 클라이언트 프로세스에서 독립적으로
-    // 호출된다(증강 선택 화면이 더 이상 공유되지 않는 재설계 이후, 각 클라이언트는 자기 팀의 카드
-    // 오퍼만 로컬로 생성한다). 예전에는 "이번 오퍼에 어떤 등급을 쓸지"까지 UnityEngine.Random으로
-    // 매 호출마다 독립적으로 뽑았기 때문에, 같은 체크포인트에서도 White 오퍼와 Black 오퍼가 서로
-    // 다른 등급으로 나올 수 있었다(신고: "서로 뜨는 증강의 등급이 다르다"). 등급 자체는 두 클라이언트
-    // 에서 항상 동일해야 공정하므로, GetCheckpointRarity()로 결정론적으로(현재 체크포인트 시점의
-    // GameManager.TurnCount로 시드된 난수) 먼저 등급을 고정한 뒤, 그 등급 안에서 구체적으로 어떤
-    // 증강이 걸리는지는 지금처럼 각자 독립적으로 무작위로 뽑는다(등급만 같으면 되고, 개별 카드까지
-    // 같을 필요는 없다는 사용자 요구사항에 맞춤).
+    // 이 메서드는 White/Black 각자의 클라이언트 프로세스에서 독립적으로 호출된다(각 클라이언트는
+    // 자기 팀의 카드 오퍼만 로컬로 생성한다). 등급 자체는 두 클라이언트에서 항상 동일해야 공정하므로,
+    // GetCheckpointRarity()로 결정론적으로(현재 체크포인트 시점의 GameManager.TurnCount로 시드된
+    // 난수) 먼저 등급을 고정한 뒤, 그 등급 안에서 구체적으로 어떤 증강이 걸리는지는 각자 독립적으로
+    // 무작위로 뽑는다(등급만 같으면 되고, 개별 카드까지 같을 필요는 없다).
     //
-    // 2026-09-23 수정: 예전에는 결정된 등급의 남은 카드가 count장 미만이면 등급 제한을 아예 풀어서
-    // 허용된 등급 전체를 섞어 채웠다 - 그 결과 카드가 부족한 등급의 카드가 다른 등급과 뒤섞여 한
-    // 오퍼에 같이 나오는 문제가 있었다("등장할 등급의 카드가 부족하면 다른 등급의 카드가 나옴").
-    // 이제 남은 카드가 minRemainingToAppear장(3장 이하) 미만인 등급은 아예 대상에서 제외하고,
-    // 결정된 등급이 그 기준에 못 미치면 등급을 섞지 않고 다른 단일 등급으로 대체한다
-    // (PickFallbackRarityExcluding 참고). 또한 여기서는 더 이상 usedAugmentIds에 추가하지 않는다 -
-    // "제시된" 카드가 아니라 "실제로 선택된" 카드만 소모되어야 선택되지 않은 나머지가 다음에 다시
-    // 나올 수 있으므로, 소모 처리는 실제 선택이 확정되는 ApplyAugmentChoice(Selection.cs)로 옮겼다.
+    // 남은 카드가 minRemainingToAppear장(3장 이하) 미만인 등급은 대상에서 제외하고, 결정된 등급이
+    // 그 기준에 못 미치면 등급을 섞지 않고 다른 단일 등급으로 대체한다(PickFallbackRarityExcluding
+    // 참고). 여기서는 usedAugmentIds에 추가하지 않는다 - "제시된" 카드가 아니라 "실제로 선택된"
+    // 카드만 소모되어야 선택되지 않은 나머지가 다음에 다시 나올 수 있으므로, 소모 처리는 실제
+    // 선택이 확정되는 ApplyAugmentChoice(Selection.cs)에서 수행한다.
     private const int minRemainingToAppear = 4; // "남은 카드가 3장 이하면 뜨지 않음" == 4장 이상이어야 후보
 
     private List<AugmentData> PickAugments(int count)
@@ -164,15 +156,11 @@ public partial class CardSelectionManager
 
         if (allowed.Count == 0) return AugmentRarity.Normal;
 
-        // 2026-10-06 수정: 예전에는 시드가 GameManager.TurnCount뿐이었다. 체크포인트 시점의 TurnCount는
-        // 모든 대전에서 항상 10/20/30...으로 고정되므로, 결과적으로 "매 게임 첫 증강(10턴째)이 항상 같은
-        // 등급(레전더리/"플래티넘")으로 고정되어 보이는" 버그였다. MatchSession.AugmentSeed(매치마다
-        // 새로 뽑혀 네트워크 대전 중에도 양쪽 클라이언트에 동일하게 전파되는 값)를 함께 섞어, 등급 결정이
-        // 매치마다 달라지면서도 같은 매치 안 두 클라이언트끼리는 여전히 일치하도록 한다.
-        // 2026-10-09 수정: 여기서 GameManager.Instance.TurnCount를 매번 직접 읽으면, TriggerAugmentCheckpoint
-        // 호출 "직후"(EndTurn의 turnCount++) turnCount가 바뀌어버려서, 이미 떠 있는 증강 선택 화면에서
-        // 리롤을 누르면 최초 표시 때와 다른 등급이 계산되는 버그가 있었다(checkpointSeedTurnCount 필드
-        // 선언부 주석 참고). 체크포인트 시작 시점에 한 번만 캐싱된 값을 대신 사용한다.
+        // 시드는 MatchSession.AugmentSeed(매치마다 새로 뽑혀 네트워크 대전 중에도 양쪽 클라이언트에
+        // 동일하게 전파되는 값)와 checkpointSeedTurnCount(체크포인트 시작 시점에 한 번만 캐싱해둔
+        // TurnCount - 필드 선언부 주석 참고)를 함께 섞어 계산한다. 이렇게 하면 등급 결정이 매치마다
+        // 달라지면서도, 같은 매치 안 두 클라이언트끼리는 물론 같은 체크포인트 동안의 리롤에서도
+        // 항상 일치한다.
         int seed = unchecked(MatchSession.AugmentSeed + checkpointSeedTurnCount);
         var rng = new System.Random(seed);
         int index = rng.Next(allowed.Count);
@@ -220,9 +208,8 @@ public partial class CardSelectionManager
 
         SoundManager.Instance?.PlayAugmentCardAppear();
 
-        // 2026-10-09 수정: 리롤 버튼은 화면당(=체크포인트의 카드 한 벌당) 1회만 사용 가능해야 하므로,
-        // 사용 즉시 비활성화한다. 다음에 새 카드 선택 화면이 열릴 때(SetRerollButtonVisible(true))
-        // 다시 활성화된다.
+        // 리롤 버튼은 화면당(=체크포인트의 카드 한 벌당) 1회만 사용 가능해야 하므로, 사용 즉시
+        // 비활성화한다. 다음에 새 카드 선택 화면이 열릴 때(SetRerollButtonVisible(true)) 다시 활성화된다.
         if (rerollButton != null)
             rerollButton.interactable = false;
     }

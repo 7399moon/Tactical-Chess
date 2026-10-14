@@ -76,9 +76,6 @@ public static partial class ChessRules
         }
         moves.RemoveRange(write, moves.Count - write);
 
-        // 2026-10-05 수정: 앙파상 캡처는 도착 칸이 빈 칸이라 기존 FilterArmisticeMoves의
-        // "도착 칸에 적이 있는 수만 제거" 판정을 피해가 휴전 협정 중에도 캡처가 가능했다.
-        // enPassantTarget을 함께 넘겨 그 좌표로 가는 수도 캡처 수로 식별해 제거한다.
         int armisticeTurns = GameManager.Instance != null ? GameManager.Instance.armisticeTurns : 0;
         if (armisticeTurns > 0)
             RemoveArmisticeCapturesInPlace(board, piece, moves, enPassantTarget);
@@ -109,7 +106,6 @@ public static partial class ChessRules
     private static readonly List<Vector2Int> legalScanBuffer = new List<Vector2Int>(32);
 
     // 한 기물에 합법 수가 "하나라도" 있는지 검사한다.
-    // 최적화: 전체 합법 수 목록을 만들지 않고, 첫 합법 수를 찾는 즉시 true로 조기 종료한다(리스트 할당 없음).
     private static bool HasAnyLegalMove(ChessPieces[,] board, ChessPieces piece, Vector2Int? enPassantTarget)
     {
         legalScanBuffer.Clear();

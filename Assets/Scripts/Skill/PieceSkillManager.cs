@@ -36,7 +36,7 @@ public partial class PieceSkillManager : MonoBehaviour
 
     // 킹 지휘 대상 보관: 캐스팅 시점엔 "예약"만 되고(pendingCommandTarget), 지휘 대상 팀의 다음
     // 턴이 시작될 때 HandleTurnStarted에서 비로소 commandedPiece/commandMovesLeft로 활성화된다
-    // (2026-10-05 수정: 캐스팅한 바로 그 턴에 대상이 움직여버리는 버그 수정 - 아래 HandleTurnStarted 참고).
+    // (캐스팅한 바로 그 턴에는 대상이 움직이지 않도록 하기 위함 - 아래 HandleTurnStarted 참고).
     private readonly Dictionary<int, ChessPieces> pendingCommandTarget = new Dictionary<int, ChessPieces>();
 
     // 유니크2(연속 워프) 판정용: 이번 턴에 사용한 워프 횟수 (팀별)
@@ -44,23 +44,20 @@ public partial class PieceSkillManager : MonoBehaviour
     // 연속 워프 체인 도중 차원 암살(적 처치)이 한 번이라도 있었는지 (체인 종료 시 쿨타임 디메리트 판정용)
     private readonly Dictionary<int, bool> warpChainUsedAttack = new Dictionary<int, bool> { { 0, false }, { 1, false } };
 
-    // 2026-10-06 수정: 예전에는 TryUseWarp가 사용할 때마다 그 시점까지의 사용 횟수를 기준으로 계산한
-    // 쿨타임을 cooldowns에 즉시 반영했다. 그런데 연속 워프(유니크2)의 1번째 사용 직후 그 쿨타임이
-    // 곧바로 걸려버려서, TryUseWarp 최상단의 IsOnCooldown 검사에 2번째 사용 자체가 막혀버리는 버그가
-    // 있었다(1번만 이동했는데 이미 쿨타임 4턴이 떠서 사실상 2번째 이동이 불가능). 이제 실제 쿨타임
-    // 반영은 해당 팀의 턴이 끝나는 시점(HandleTurnStarted)까지 미루고, 그 사이에는 "이번 턴에 워프한
-    // 비숍"과 "그 시점까지 계산된 최종 쿨타임 값"만 팀별로 기록해둔다.
+    // 연속 워프(유니크2) 사용 중에는 TryUseWarp가 호출될 때마다 쿨타임을 cooldowns에 즉시 반영하지
+    // 않는다 - 그러면 1번째 사용 직후의 쿨타임이 곧바로 걸려, TryUseWarp 최상단의 IsOnCooldown
+    // 검사가 2번째 사용 자체를 막아버리게 된다. 대신 실제 쿨타임 반영은 해당 팀의 턴이 끝나는
+    // 시점(HandleTurnStarted)까지 미루고, 그 사이에는 "이번 턴에 워프한 비숍"과 "그 시점까지
+    // 계산된 최종 쿨타임 값"만 팀별로 기록해둔다.
     private readonly Dictionary<int, ChessPieces> pendingWarpBishop = new Dictionary<int, ChessPieces>();
     private readonly Dictionary<int, int> pendingWarpCooldown = new Dictionary<int, int>();
 
     // GC Alloc 방지용 Key 캐싱 리스트
     private readonly List<ChessPieces> tickCacheKeys = new List<ChessPieces>();
 
-    // 2026-10-05 수정(2차): pendingCommandTarget은 팀별로 분리돼 있었지만, 정작 "활성화된" 지휘
-    // 상태(commandedPiece/commandMovesLeft)는 팀 구분 없는 단일 필드였다. 그 결과 양 팀이 각자
-    // 지휘를 예약해두면, 나중에 활성화되는 팀의 HandleTurnStarted 호출이 먼저 활성화돼 있던 다른
-    // 팀의 지휘 상태를 통째로 덮어써 버리는 치명적 버그가 있었다(그 팀의 지휘 대상/잔여 이동이
-    // 흔적도 없이 사라지고 VFX도 고아 상태로 남음). 팀별 Dictionary로 완전히 분리해 관리한다.
+    // "활성화된" 지휘 상태(commandedPiece/commandMovesLeft)는 양 팀이 각자 독립적으로 지휘를
+    // 예약/활성화할 수 있어야 하므로, 팀 구분 없는 단일 필드가 아니라 팀별 Dictionary로 완전히
+    // 분리해 관리한다(한쪽 팀의 활성화가 다른 팀의 지휘 대상/잔여 이동/VFX를 건드리지 않도록).
     private readonly Dictionary<int, ChessPieces> commandedPieceByTeam = new Dictionary<int, ChessPieces>();
     private readonly Dictionary<int, int> commandMovesLeftByTeam = new Dictionary<int, int>();
 
@@ -70,11 +67,8 @@ public partial class PieceSkillManager : MonoBehaviour
     private readonly Dictionary<int, GameObject> commandVfxInstanceByTeam = new Dictionary<int, GameObject>();
 
     // 킹 지휘 스킬의 "기본" 쿨타임(사용 직후 다시 채워지는 값)을 팀별로 독립 관리한다.
-    // (2026-09-21 수정 1-3: 예전에는 kingCommandCooldown이 팀 구분 없는 단일 필드라, 레전더리5
-    //  "섭정"(king_regency) 증강을 한쪽 팀만 보유해도 SetKingCommandCooldownBase(12) 호출이
-    //  다른 팀의 킹 지휘 쿨타임 기본값까지 12로 바꿔버리는 누수가 있었다. AugmentManager가 이미
-    //  "섭정" 보유 여부 자체는 팀별로 정확히 관리하고 있었으므로, 이 쿨타임 기본값도 팀별 배열로
-    //  분리해 실제 보유 팀에게만 적용되도록 한다. 인덱스 0=White, 1=Black.)
+    // (레전더리5 "섭정"(king_regency) 증강을 한쪽 팀만 보유했을 때 그 팀에게만 적용되어야 하므로,
+    //  이 쿨타임 기본값도 팀별 배열로 분리해 관리한다. 인덱스 0=White, 1=Black.)
     private readonly int[] kingCommandCooldownBase = new int[2];
 
     // 인스펙터에 설정된 킹 지휘 쿨타임의 원래 기본값 (레전더리5 "섭정" 증강이 런타임에 8->12로 바꿔놓을 수 있어,
@@ -83,10 +77,8 @@ public partial class PieceSkillManager : MonoBehaviour
     #endregion
 
     #region 외부 공개 프로퍼티
-    // 2026-10-05 수정: 팀별로 완전히 독립된 지휘 상태를 조회하도록 team 매개변수를 받는 메서드로
-    // 바꿨다(기존의 팀 구분 없는 단일 프로퍼티가 위 commandedPieceByTeam 필드 주석에 적은 버그의
-    // 원인이었다). 호출부는 전부 "지금 행동 중인 팀" 또는 "확인하려는 기물의 팀"을 이미 알고
-    // 있으므로 team을 넘기는 것으로 자연스럽게 치환된다.
+    // 팀별로 완전히 독립된 지휘 상태를 조회하도록 team 매개변수를 받는 메서드로 제공한다. 호출부는
+    // 전부 "지금 행동 중인 팀" 또는 "확인하려는 기물의 팀"을 이미 알고 있으므로 team을 그대로 넘긴다.
     public bool IsCommandActiveForTeam(int team) =>
         commandedPieceByTeam.TryGetValue(team, out ChessPieces p) && p != null && commandMovesLeftByTeam.GetValueOrDefault(team) > 0;
     public ChessPieces GetCommandedPiece(int team) => commandedPieceByTeam.TryGetValue(team, out ChessPieces p) ? p : null;
@@ -151,10 +143,10 @@ public partial class PieceSkillManager : MonoBehaviour
         warpUsesThisTurn[newTurnTeam] = 0;
         warpChainUsedAttack[newTurnTeam] = false;
 
-        // 2026-10-05 수정: 지휘는 캐스팅한 턴엔 예약만 되어 있고(pendingCommandTarget), 지휘 대상
-        // 팀의 턴이 "새로" 시작되는 바로 이 시점에만 실제로 활성화(2회 이동 가능)된다. 캐스팅한
-        // 팀이 섭정 등으로 같은 턴을 계속 이어가더라도 여기(새 턴 시작)를 거치지 않으므로 지휘
-        // 대상은 그 턴엔 전혀 움직일 수 없다.
+        // 지휘는 캐스팅한 턴엔 예약만 되어 있고(pendingCommandTarget), 지휘 대상 팀의 턴이 "새로"
+        // 시작되는 바로 이 시점에만 실제로 활성화(2회 이동 가능)된다. 캐스팅한 팀이 섭정 등으로
+        // 같은 턴을 계속 이어가더라도 여기(새 턴 시작)를 거치지 않으므로 지휘 대상은 그 턴엔
+        // 전혀 움직일 수 없다.
         if (pendingCommandTarget.TryGetValue(newTurnTeam, out ChessPieces target) && target != null)
         {
             commandedPieceByTeam[newTurnTeam] = target;

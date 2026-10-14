@@ -124,10 +124,9 @@ public class AugmentManager : MonoBehaviour
             // --- 4. 즉시 연동형 (다른 매니저 상태를 직접 변경) ---
             case "king_regency": // 레전더리5: 섭정 (지휘 사용 시 턴 유지, 대신 쿨타임 8->12 증가)
                 // "턴 유지" 여부는 사용 시점에 ChessInteractionManager가 HasAugment(actingTeam, "king_regency")로
-                // 직접 조회한다(팀 구분 없는 SkillUIManager 플랫 bool에 기록하면 한쪽 팀만 보유해도
-                // 다른 팀에게까지 효과가 새어나가는 문제가 있었다). 쿨타임 기본값 변경도 반드시 이 팀(team)
-                // 에게만 적용한다(2026-09-21 수정 1-3: 예전에는 SetKingCommandCooldownBase(12)가 팀 인자 없이
-                // 호출되어, PieceSkillManager 쪽의 단일 필드를 통해 미보유 팀에게까지 12로 새는 문제가 있었다).
+                // 직접 조회한다(팀 구분 없는 SkillUIManager 플랫 bool이 아니라 팀별로 조회해야, 한쪽 팀만
+                // 보유했을 때 다른 팀에게 효과가 새어나가지 않는다). 쿨타임 기본값 변경도 반드시 이
+                // 팀(team)에게만 적용한다.
                 if (PieceSkillManager.Instance != null)
                     PieceSkillManager.Instance.SetKingCommandCooldownBase(team, 12);
                 break;
@@ -158,15 +157,9 @@ public class AugmentManager : MonoBehaviour
         if (IsKnight(attacker.type) && hasKnightKillCdReduction.GetValueOrDefault(team))
             PieceSkillManager.Instance.ReduceCooldown(attacker, 1);
 
-        // 레어3(연쇄 위협): 위협 대상을 잡음 (victim에 위협 표식이 있는 경우)
-        // 2026-10-05 수정: 예전에는 이 조건을 만족하면 무조건 "처치한 기물(attacker) 자신"의 쿨타임을
-        // 깎았다. 연쇄 위협은 "나이트의 위협 스킬" 쿨타임을 감소시키는 증강인데, 나이트가 아닌 다른
-        // 기물(비숍/룩 등)이 마무리를 지은 경우 엉뚱하게 그 기물 자신의 스킬 쿨타임이 깎여버리는
-        // 버그였다(예: 워프 가속+연쇄 위협을 함께 보유한 비숍이 위협당한 기물을 처치하면, 룰상으로는
-        // 위협 쿨타임만 깎여야 하는데 실제로는 비숍 자신의 워프 쿨타임이 깎였다 - 반대로 아래 레어5
-        // 조건도 함께 성립해 워프 쿨타임이 별도로 또 깎이면서 중복 감소까지 발생할 수 있었다).
-        // 이제 "처치한 기물의 종류와 무관하게 위협 스킬(나이트) 쿨타임만" 깎도록, attacker가 나이트가
-        // 아니면 해당 팀에서 쿨타임이 걸려 있는 나이트를 찾아 그 쿨타임을 감소시킨다.
+        // 레어3(연쇄 위협): 위협 대상을 잡음 (victim에 위협 표식이 있는 경우).
+        // "처치한 기물의 종류와 무관하게 위협 스킬(나이트) 쿨타임만" 감소시켜야 하므로, attacker가
+        // 나이트가 아니면 해당 팀에서 쿨타임이 걸려 있는 나이트를 찾아 그 쿨타임을 감소시킨다.
         if (hasThreatTargetKillCdReduction.GetValueOrDefault(team) && victim.IsThreatenedTarget)
         {
             ChessPieces knightToReduce = IsKnight(attacker.type) ? attacker : FindKnightOnCooldown(team);

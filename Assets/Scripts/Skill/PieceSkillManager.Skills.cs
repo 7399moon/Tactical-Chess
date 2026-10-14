@@ -11,10 +11,9 @@ public partial class PieceSkillManager
         TryUseThreat(knight, target != null ? new List<ChessPieces> { target } : null);
 
     // 유니크1(다중 위협) 보유 시 대상 2명을 동시에 지정 가능.
-    // 2026-10-03 수정: 다중 위협 증강 보유 시 2명을 채우지 못하면 위협이 아예 발동되지 않아,
-    // 적이 사정거리 안에 1명뿐인 상황에서는 위협을 쓸 방법이 없었다. bypassMinimumCount를 true로
-    // 넘기면(같은 대상을 재클릭해 "이 인원으로 바로 발동" 의사를 표시한 경우) 목표 인원 미달이어도
-    // 지금까지 고른 대상만으로 발동을 허용한다. 대상이 0명이면 당연히 허용하지 않는다.
+    // bypassMinimumCount를 true로 넘기면(같은 대상을 재클릭해 "이 인원으로 바로 발동" 의사를
+    // 표시한 경우) 목표 인원 미달이어도 지금까지 고른 대상만으로 발동을 허용한다 - 그래야 적이
+    // 사정거리 안에 1명뿐인 상황에서도 위협을 쓸 수 있다. 대상이 0명이면 당연히 허용하지 않는다.
     public bool TryUseThreat(ChessPieces knight, List<ChessPieces> targets, bool bypassMinimumCount = false)
     {
         if (knight == null || targets == null || targets.Count == 0 || IsOnCooldown(knight))
@@ -35,10 +34,10 @@ public partial class PieceSkillManager
         }
 
         // 레전더리1(처형자의 표식): 대상 중 1명을 즉시 처형 (사용 시 쿨타임 2턴 증가)
-        // 2026-10-05 수정: 휴전 협정(temporary_ceasefire) 중에는 일반 이동 캡처뿐 아니라 스킬/증강에
-        // 의한 캡처도 전부 금지되어야 하는데, 처형자의 표식은 ChessRules의 이동 생성/필터링을 거치지
-        // 않고 PieceCapture.CapturePieceAt을 직접 호출해 처치하므로 휴전 협정 필터를 그대로 피해갔다.
-        // 휴전 협정 중에는 처형 자체(및 그에 따른 쿨타임 증가분)를 적용하지 않는다.
+        // 처형자의 표식은 ChessRules의 이동 생성/필터링을 거치지 않고 PieceCapture.CapturePieceAt을
+        // 직접 호출해 처치하므로, 휴전 협정(temporary_ceasefire) 중에는 처형 자체(및 그에 따른
+        // 쿨타임 증가분)를 적용하지 않는다 - 일반 이동 캡처뿐 아니라 스킬/증강에 의한 캡처도 전부
+        // 금지되어야 하기 때문이다.
         bool ceasefireActive = GameManager.Instance != null && GameManager.Instance.armisticeTurns > 0;
         bool executes = HasAugment(knight.team, "knight_execution") && !ceasefireActive;
 
@@ -77,9 +76,9 @@ public partial class PieceSkillManager
     // 유니크2(연속 워프) 보유 시 1턴에 2회까지 사용 가능(두 번째 사용 시 쿨타임 +2턴)
     public bool TryUseWarp(ChessPieces bishop, Vector2Int targetPos, ChessBoard board)
     {
-        // 2026-10-05 수정: 위협(이동 불가) 상태인 기물은 일반 이동뿐 아니라 어떤 스킬/증강으로도
-        // 움직일 수 없어야 하는데, 워프는 PieceMovement를 거치지 않고 비숍을 직접 좌표 이동시키므로
-        // IsImmobilized 검사가 빠져 있었다. 비숍 자신이 위협 상태면 워프 자체를 거부한다.
+        // 위협(이동 불가) 상태인 기물은 일반 이동뿐 아니라 어떤 스킬/증강으로도 움직일 수 없어야
+        // 한다. 워프는 PieceMovement를 거치지 않고 비숍을 직접 좌표 이동시키므로, 여기서 비숍
+        // 자신이 위협 상태면 워프 자체를 거부한다.
         if (bishop == null || board == null || IsOnCooldown(bishop) || IsImmobilized(bishop)) return false;
 
         // 상하좌우 1칸 검사
@@ -90,8 +89,8 @@ public partial class PieceSkillManager
         int team = bishop.team;
         ChessPieces occupant = board.GetPieceAt(targetPos.x, targetPos.y);
 
-        // 2026-10-05 수정: 차원 암살(워프로 적 처치)도 휴전 협정 중에는 금지되어야 한다 (TryUseThreat의
-        // 처형자의 표식과 동일한 이유 - PieceCapture.CapturePieceAt을 직접 호출해 휴전 협정 필터를 피해간다).
+        // 차원 암살(워프로 적 처치)도 휴전 협정 중에는 금지되어야 한다(TryUseThreat의 처형자의
+        // 표식과 동일한 이유 - PieceCapture.CapturePieceAt을 직접 호출해 휴전 협정 필터를 피해간다).
         bool ceasefireActive = GameManager.Instance != null && GameManager.Instance.armisticeTurns > 0;
 
         bool allowSwap = occupant != null && occupant.team == team && HasAugment(team, "bishop_warp_swap");
@@ -110,8 +109,8 @@ public partial class PieceSkillManager
             return false;
         }
 
-        // 2026-10-05 수정: 워프 스왑 대상 아군이 위협 상태면 그 아군 역시 어떤 방식으로도 옮겨질 수
-        // 없어야 하므로, 스왑으로 그 기물을 움직이는 것도 차단한다.
+        // 워프 스왑 대상 아군이 위협 상태면 그 아군 역시 어떤 방식으로도 옮겨질 수 없어야 하므로,
+        // 스왑으로 그 기물을 움직이는 것도 차단한다.
         if (allowSwap && IsImmobilized(occupant))
         {
             Debug.Log("대상 기물은 위협 상태여서 워프 스왑으로 이동시킬 수 없습니다.");
@@ -129,20 +128,18 @@ public partial class PieceSkillManager
         // 체인 중 한 번이라도 차원 암살을 사용했는지 누적 기록 (첫 워프에서 처치하고 두 번째는 그냥 이동해도 디메리트 유지)
         if (allowAttack) warpChainUsedAttack[team] = true;
 
-        // 2026-10-05 수정: 예전에는 chainContinues가 true인 동안(연속 워프의 1번째 사용 직후) 쿨타임을
-        // 전혀 설정하지 않고 2번째 사용이 끝나거나 포기할 때까지 미뤄뒀다. 그런데 1번째 워프만 쓰고
-        // 2번째를 쓰지 않은 채 턴을 넘기면(혹은 그냥 더 이상 쓰지 않으면) 쿨타임 자체가 아예 적용되지
-        // 않는 버그(사실상 매 턴 공짜 워프)가 있었다. 이제 매 사용마다 그 시점까지의 사용 횟수를
-        // 기준으로 쿨타임을 항상 즉시 계산/반영한다: 1회만 쓰면 기본값(4턴), 2회까지 다 쓰면
-        // 연속 워프 디메리트(+2턴)가 추가로 붙어 6턴 - 차원 암살 디메리트(+2턴)는 기존처럼 별도로 누적된다.
+        // 매 사용마다 그 시점까지의 사용 횟수를 기준으로 쿨타임을 항상 즉시 계산/반영한다: 1회만
+        // 쓰면 기본값(4턴), 2회까지 다 쓰면 연속 워프 디메리트(+2턴)가 추가로 붙어 6턴 - 차원 암살
+        // 디메리트(+2턴)는 별도로 누적된다. 이렇게 해야 1번째 워프만 쓰고 2번째를 쓰지 않은 채
+        // 턴을 넘기더라도 쿨타임이 정상적으로 적용된다.
         int cooldown = bishopWarpCooldown;
         if (hasContinuousWarp && usesSoFar >= 2) cooldown += 2; // 연속 워프를 다 사용한 턴의 디메리트
         if (warpChainUsedAttack.GetValueOrDefault(team)) cooldown += 2; // 차원 암살로 처치했을 때의 디메리트
 
-        // 2026-10-06 수정: 여기서 즉시 cooldowns[bishop]에 반영하면 연속 워프의 2번째 사용이 1번째
-        // 사용 직후 걸린 쿨타임에 막혀버린다. 턴이 끝날 때(PieceSkillManager.HandleTurnStarted) 적용할
-        // "예약된 쿨타임"으로만 기록해둔다 - 매 사용마다 덮어써지므로 턴 종료 시점엔 항상 그 턴의
-        // 최종 사용 횟수를 반영한 값이 적용된다.
+        // 여기서 즉시 cooldowns[bishop]에 반영하면 연속 워프의 2번째 사용이 1번째 사용 직후 걸린
+        // 쿨타임에 막혀버리므로, 턴이 끝날 때(PieceSkillManager.HandleTurnStarted) 적용할 "예약된
+        // 쿨타임"으로만 기록해둔다 - 매 사용마다 덮어써지므로 턴 종료 시점엔 항상 그 턴의 최종
+        // 사용 횟수를 반영한 값이 적용된다.
         pendingWarpBishop[team] = bishop;
         pendingWarpCooldown[team] = cooldown;
 
@@ -205,9 +202,9 @@ public partial class PieceSkillManager
         TryUseShield(rook, target != null ? new List<ChessPieces> { target } : null);
 
     // 유니크3(광역 수호) 보유 시 대상 2명을 동시에 지정 가능.
-    // 2026-10-04 수정: 나이트 위협(TryUseThreat)과 동일한 이유로 bypassMinimumCount 추가 - 광역 수호
-    // 보유 시 2명을 채우지 못하면(사정거리 안에 아군이 1명뿐인 등) 쉴드를 영영 쓸 수 없었다. 같은 대상을
-    // 재클릭하면(ChessInteractionManager.Skills.cs) 목표 인원 미달이어도 지금까지 고른 대상만으로 발동한다.
+    // 나이트 위협(TryUseThreat)과 동일한 이유로 bypassMinimumCount를 받는다 - 같은 대상을
+    // 재클릭하면(ChessInteractionManager.Skills.cs) 목표 인원 미달이어도(사정거리 안에 아군이
+    // 1명뿐인 등) 지금까지 고른 대상만으로 발동한다.
     public bool TryUseShield(ChessPieces rook, List<ChessPieces> targets, bool bypassMinimumCount = false)
     {
         if (rook == null || targets == null || targets.Count == 0 || IsOnCooldown(rook))
@@ -253,28 +250,24 @@ public partial class PieceSkillManager
     }
 
     // 킹 - 지휘: 선택 아군에게 연속 2회 이동권 부여 (기본 쿨타임 8턴, 팀별 kingCommandCooldownBase 참고.
-    // 2026-09-21 수정 1-3: 예전에는 팀 구분 없는 단일 kingCommandCooldown 필드를 사용해, "섭정" 증강을
-    // 한쪽 팀만 보유해도 다른 팀의 킹 지휘 쿨타임 기본값까지 12로 새는 문제가 있었다. 이제 사용한
-    // 기물(king)의 팀에 해당하는 kingCommandCooldownBase[team]만 적용한다.)
+    // 사용한 기물(king)의 팀에 해당하는 kingCommandCooldownBase[team]만 적용한다.)
     //
-    // 2026-09-23 수정: 지휘 대상이 위협이나 아군 기물에 막혀 애초에 이동할 수 있는 수가 하나도 없으면
-    // 지휘를 걸어도 절대 완료될 수 없어 게임 진행이 멈춰버렸다. 활성화 시점에 실제로 이동 가능한
-    // 기물만 대상으로 선택할 수 있도록 수 계산으로 미리 검증한다.
+    // 지휘 대상이 위협이나 아군 기물에 막혀 애초에 이동할 수 있는 수가 하나도 없으면 지휘를 걸어도
+    // 완료될 수 없으므로, 활성화 시점에 실제로 이동 가능한 기물만 대상으로 선택할 수 있도록 수
+    // 계산으로 미리 검증한다.
     public bool TryUseCommand(ChessPieces king, ChessPieces target)
     {
         if (king == null || target == null || IsOnCooldown(king)) return false;
 
-        // 2026-10-05 수정: 아군 전용 스킬인데 팀 검증이 빠져 있어 적 기물도 지휘 대상으로 지정할 수
-        // 있었다(나이트 위협/룩 쉴드는 이미 상대/아군 검증을 하는데 지휘만 빠져 있었음). 이 때문에
-        // 상대 기물을 지정해 상대의 다음 턴에 그 기물만 움직이도록 강제하는 것이 가능한 심각한
-        // 버그였다. 또한 이미 지휘가 예약/활성 중인 팀이 중복으로 다시 지휘를 거는 것도 막는다.
+        // 지휘는 아군 전용 스킬이므로 적 기물은 대상으로 지정할 수 없다(나이트 위협/룩 쉴드와
+        // 동일하게 상대/아군을 검증한다). 또한 이미 지휘가 예약/활성 중인 팀이 중복으로 다시
+        // 지휘를 거는 것도 막는다.
         if (target.team != king.team) return false;
 
-        // 2026-10-05 수정: 킹 자기 자신을 지휘 대상으로 지정하는 것을 막는다. 왕의 보폭(king_range_up)을
-        // 함께 보유한 상태에서 킹이 스스로를 지휘하면, 지휘로 보장된 2회 이동이 왕의 보폭의 "추가
-        // 이동 1회" 판정/소모 로직과 뒤엉켜(ProcessKingDoubleMove가 지휘의 이동을 보너스 이동으로
-        // 오인) 왕의 보폭 효과가 통째로 증발하는 상호작용 버그가 있었다. 자기 자신 지정 자체가
-        // 기능적으로도 의미가 없으므로(킹이 킹에게 명령) 아예 차단한다.
+        // 킹 자기 자신을 지휘 대상으로 지정하는 것을 막는다. 왕의 보폭(king_range_up)을 함께
+        // 보유한 상태에서 킹이 스스로를 지휘하면, 지휘로 보장된 2회 이동이 왕의 보폭의 "추가 이동
+        // 1회" 판정/소모 로직과 상호작용할 수 있고, 자기 자신 지정 자체도 기능적으로 의미가
+        // 없으므로(킹이 킹에게 명령) 아예 차단한다.
         if (target == king) return false;
 
         if (pendingCommandTarget.ContainsKey(king.team) || IsCommandActiveForTeam(king.team))
@@ -287,28 +280,22 @@ public partial class PieceSkillManager
             return false;
         }
 
-        // 2026-10-05 수정: 예전에는 여기서 곧바로 commandedPiece/commandMovesLeft를 활성화해,
-        // "섭정"(턴 유지) 보유 시 캐스팅 즉시 같은 턴 안에서 지휘 대상이 2회 이동까지 끝내버리는
-        // 버그가 있었다(왕의 보폭과 겹치면 아예 다른 기물의 보너스 이동 슬롯까지 가로채는 문제도
-        // 있었음). 지휘는 항상 "예약"만 해두고, 실제 활성화(2회 이동 가능 상태로 전환)는
-        // HandleTurnStarted에서 지휘 대상 팀의 다음 턴이 시작될 때 비로소 이뤄지도록 한다 -
-        // 섭정으로 턴이 유지되어 캐스팅한 팀이 같은 턴에 다른 기물을 마저 움직이더라도, 지휘
-        // 대상 자체는 그 턴엔 전혀 움직일 수 없고 반드시 다음 턴에만 2회 이동하게 된다.
+        // 지휘는 항상 "예약"만 해두고, 실제 활성화(2회 이동 가능 상태로 전환)는 HandleTurnStarted
+        // 에서 지휘 대상 팀의 다음 턴이 시작될 때 비로소 이뤄지도록 한다 - 그래야 "섭정"(턴 유지)
+        // 으로 턴이 유지되어 캐스팅한 팀이 같은 턴에 다른 기물을 마저 움직이더라도, 지휘 대상
+        // 자체는 그 턴엔 전혀 움직일 수 없고 반드시 다음 턴에만 2회 이동하게 된다.
         pendingCommandTarget[king.team] = target;
 
         cooldowns[king] = kingCommandCooldownBase[king.team];
 
-        // 지휘 VFX: 대상 머리 위에 노란 이펙트를 부여(예약 표시), 실제 2회 이동이 끝날 때까지 유지
-        // 2026-10-05 수정(멀티플레이 버그): 기존에는 GetHeadLocalOffset(기물 렌더러 전체 높이 기반 동적
-        // 오프셋)을 사용해, 나이트 기준 약 2.33, 킹 기준 약 3.5 유닛이나 되는 큰 높이로 VFX가 스폰됐다.
-        // 같은 0.15 스케일을 쓰는 위협/쉴드 VFX는 둘 다 고정된 Vector3.up * 0.1f 오프셋을 써서 문제없이
-        // 보이므로, 지휘 VFX만 유독 "기존보다 크고 높이 떠서 보이는" 원인은 스케일이 아니라 이 오프셋이었다.
-        // 다른 세 스킬과 동일한 고정 오프셋으로 맞춰 피규어 머리 바로 위에 보이도록 수정한다.
+        // 지휘 VFX: 대상 머리 위에 노란 이펙트를 부여(예약 표시), 실제 2회 이동이 끝날 때까지 유지.
+        // 위협/쉴드 VFX와 동일하게 고정된 Vector3.up * 0.1f 오프셋을 사용해 피규어 머리 바로 위에
+        // 보이도록 맞춘다.
         if (commandVfxInstanceByTeam.TryGetValue(king.team, out GameObject existingCommandVfx) && existingCommandVfx != null)
             Destroy(existingCommandVfx);
         GameObject commandVfx = SpawnPieceVfx(commandVfxPrefab, target, Vector3.up * 0.1f);
-        // 2026-10-09 수정: 지휘 이펙트만 요청에 따라 기존 크기의 1.2배로 키운다(위협/쉴드 등 다른
-        // 스킬 VFX는 그대로 유지 - SpawnPieceVfx 공용 함수는 건드리지 않고 이 스폰 결과에만 적용).
+        // 지휘 이펙트만 기존 크기의 1.2배로 키운다(위협/쉴드 등 다른 스킬 VFX는 그대로 유지 -
+        // SpawnPieceVfx 공용 함수는 건드리지 않고 이 스폰 결과에만 적용).
         if (commandVfx != null)
             commandVfx.transform.localScale *= 1.2f;
         commandVfxInstanceByTeam[king.team] = commandVfx;
@@ -318,7 +305,7 @@ public partial class PieceSkillManager
         return true;
     }
 
-    // 지휘 기물이 이동할 때마다 이동 횟수를 차감 (2026-10-05 수정: 팀별로 독립 차감)
+    // 지휘 기물이 이동할 때마다 이동 횟수를 차감 (팀별로 독립 차감)
     public void OnCommandPieceMoved(int team)
     {
         int left = commandMovesLeftByTeam.GetValueOrDefault(team);
@@ -348,7 +335,7 @@ public partial class PieceSkillManager
     // 기다리지 못하고 지휘 효과를 강제로 종료해 게임 진행이 멈추지 않도록 한다 (PieceMovement에서 호출).
     public void ForceEndCommand(int team) => ClearCommandState(team);
 
-    // 지휘 상태(대상/잔여 이동 횟수/VFX) 정리 공통 처리 (2026-10-05 수정: 팀별로 독립 정리)
+    // 지휘 상태(대상/잔여 이동 횟수/VFX) 정리 공통 처리 (팀별로 독립 정리)
     private void ClearCommandState(int team)
     {
         commandedPieceByTeam.Remove(team);
@@ -362,9 +349,8 @@ public partial class PieceSkillManager
     }
 
     // "현재 턴을 진행 중인 팀"이 스킬을 사용했을 때 SkillUIManager(단일/플랫 상태)에 통지.
-    // 예전에는 team == 0(백)으로 고정되어 있어 흑팀이 스킬을 사용해도 SkillUIManager의
-    // HasUsedSkillThisTurn 등이 갱신되지 않는 문제가 있었다. SkillUIManager의 이번 턴 상태는
-    // 항상 "현재 턴 팀"을 나타내므로 GameManager.CurrentTurn과 비교해야 한다.
+    // SkillUIManager의 이번 턴 상태는 항상 "현재 턴 팀"을 나타내므로, team을 GameManager.CurrentTurn과
+    // 비교해 일치할 때만 통지한다(흑/백 양쪽 모두 올바르게 갱신되도록).
     private void NotifySkillUsed(int team)
     {
         if (GameManager.Instance != null && team == GameManager.Instance.CurrentTurn && SkillUIManager.Instance != null)
