@@ -196,6 +196,20 @@ flowchart LR
 - **해결**: 캡처가 확정되는 지점에서 피해 기물과 연결된 모든 상태를 정리하는 `ClearPieceState`를 호출하도록 했다. 일반 캡처, 앙파상, 스킬 캡처가 모두 이 경로를 지난다. 승급으로 기물이 교체될 때도 같은 함수로 정리하고 쿨타임만 새 기물에 옮긴다.
 - **배운 점**: 기물이 사라지는 모든 경로가 한 지점을 거치게 만들어야 상태가 남지 않는다.
 
+## 에셋과 라이선스
+
+| 구분 | 저장소 포함 여부 | 비고 |
+|---|---|---|
+| 게임 스크립트, 증강/우노 데이터, UI 아이콘, 스킬 버튼, 우노 카드 | 포함 | 직접 제작 |
+| 효과음 15종 (`Assets/Audio/SFX`) | 포함 | Dustyroom Casual Game Sound, CC0 (`Assets/Audio/license.pdf`) |
+| TextMesh Pro | 포함 | Unity 기본 패키지 |
+| Photon Fusion 2 SDK (`Assets/Photon`) | 포함 | Photon 라이선스 적용. 사용 시 Photon 약관 확인 필요 |
+| 체스 기물/보드 3D 모델 (`Assets/Models`) | **미포함** | 에셋스토어 에셋, 재배포 불가 |
+| VFX 텍스처·모델·기본 프리팹 (`Assets/Textures/VFX_Textures`, `Assets/Models/VFX_Models`, `Assets/Prefabs/VFX_Prefabs`의 원본 프리팹) | **미포함** | 에셋스토어 에셋, 재배포 불가 |
+| 보드 질감 텍스처, 맑은 고딕 폰트 | **미포함** | 외부 자료 / Microsoft 폰트 |
+
+라이선스상 미포함인 에셋이 없으면 기물과 일부 스킬 이펙트가 비어 보이거나 분홍색으로 표시된다. 완성된 화면은 위 스크린샷과 [Releases](https://github.com/7399moon/Tactical-Chess/releases)의 빌드에서 볼 수 있다.
+
 ## 빌드 / 실행
 
 - **Photon App ID 설정**: 이 저장소에는 App ID가 들어 있지 않다. [Photon 대시보드](https://dashboard.photonengine.com)에서 Fusion 앱을 만들어 App ID를 받고, Unity에서 `Tools > Fusion > Fusion Hub`(또는 `Tools > Fusion > Realtime Settings`)에 입력하면 `Assets/Photon/Fusion/Resources/PhotonAppSettings.asset`이 생성된다. 이 파일은 `.gitignore`에 들어 있어 커밋되지 않는다.
