@@ -125,12 +125,79 @@ Assets/Scenes/
 | 13. 우노 체스 모드 | 10-07 | 우노 카드 데이터·덱 로직, 로비 모드 선택, 카드 UI와 턴 흐름, 카드 효과, 부활, UNO 경쟁과 패배 연출, 네트워크 동기화, 기물 드래그 이동 |
 | 14. 증강 리롤과 UI 반응 | 10-08 ~ 10-09 | 우노 카드 모서리 정리, 증강 리롤 버튼(회당 1회)과 등급 고정 버그 수정, 버튼·카드 호버/클릭 연출, 드래그 이동 거부 시 원위치 복귀, 지휘 이펙트·자체 방벽 범위 표시 수정 |
 
-## 알려진 이슈 / 남은 과제
+## 구조도
 
-- 두 플레이어가 정확히 같은 타이밍에 동시 클릭하는 레이스 컨디션은 아직 실기기로 검증 안 됨
-- 밸런스: 퀸 라인이 스노우볼 잠재력이 가장 크고, 룩/킹 라인은 레전더리 등급 증강이 부족해 후반 파워 스파이크가 약함
+```mermaid
+flowchart LR
+    subgraph Input["입력"]
+        BIH["BoardInputHandler<br/>클릭 / 드래그"]
+        UI["SkillUIManager / UnoUI<br/>스킬 버튼 / 카드"]
+    end
+
+    subgraph Net["네트워크 (Photon Fusion 2, Host-Client)"]
+        CNS["ChessNetworkSync<br/>클릭 좌표 RPC 중계"]
+        MS["MatchSettings / MatchSession<br/>대전 설정 / 증강 시드"]
+    end
+
+    subgraph Core["게임 코어 (모든 클라이언트가 동일하게 재실행)"]
+        CIM["ChessInteractionManager<br/>선택 / 이동 실행"]
+        CR["ChessRules<br/>합법 수 / 체크 / 체크메이트"]
+        PM["PieceMovement / PieceCapture"]
+        CB["ChessBoard<br/>보드 상태"]
+        GM["GameManager<br/>턴 / 타이머"]
+    end
+
+    subgraph Feature["확장 시스템"]
+        PSM["PieceSkillManager<br/>쿨타임 / 위협 / 쉴드 / 지휘"]
+        AM["AugmentManager<br/>팀별 증강 보유 / 효과"]
+        CSM["CardSelectionManager<br/>증강 / 승급 카드 선택"]
+        UNO["UnoTurnController / UnoMatch<br/>우노 모드"]
+    end
+
+    BIH --> CIM
+    UI --> PSM
+    CIM -->|"RPC_RelayBoardClick"| CNS
+    CNS -->|"모든 클라이언트에 전달"| CIM
+    CIM --> CR
+    CIM --> PM
+    PM --> CB
+    PM -->|"스킬 계층 검증"| PSM
+    CR -.->|"증강으로 바뀌는 이동 규칙"| AM
+    PM -->|"캡처 이벤트"| AM
+    GM -->|"10턴마다 / 승급 시"| CSM
+    CSM --> AM
+    MS --> CSM
+    MS --> UNO
+    UNO --> CNS
+```
+
+- **동기화 방식**: 보드와 기물은 클라이언트마다 따로 가지고 있고, 클릭 좌표(`RPC_RelayBoardClick`)만 RPC로 중계한다. 양쪽이 같은 입력을 같은 순서로 같은 코드(`ChessRules`, `PieceSkillManager`)에 넣어 같은 결과를 만든다.
+- **규칙과 확장 분리**: `ChessRules`는 체스 규칙만 계산하고, 증강이 바꾸는 이동 규칙은 `AugmentManager`를 조회해서 반영한다. 스킬은 `PieceMovement`에서 검증하므로 규칙 계산 코드를 건드리지 않는다.
+- **팀별 상태**: 증강 보유, 지휘 예약, 승급 대기 같은 상태는 모두 팀 번호를 키로 하는 컬렉션으로 관리한다.
+- **우노 모드**: 카드 로직(`Uno/`, 별도 어셈블리로 분리해 단위 테스트)과 화면/턴 흐름(`UnoGame/`)을 나누고, 덱 셔플과 손패는 호스트가 결정해서 게스트에게 필요한 카드만 전달한다.
+
+## 트러블슈팅 사례
+
+### 1. 상대 턴이 스킬 사용 기회 없이 즉시 넘어가는 동기화 오류
+- **증상**: 2인 대전에서 상대 턴이 아무 입력 없이 바로 끝나버림.
+- **원인**: 자동 턴 종료 판정(`CheckAutoTurnEnd`)이 "쓸 수 있는 스킬이 있는가"가 아니라 "스킬 버튼이 눌리는 상태인가"를 보고 있었다. 버튼 상태는 클라이언트마다 다른 화면 값이고 상대 턴에는 항상 비활성이라, 양쪽의 판단이 어긋났다.
+- **해결**: 양쪽에 동일하게 유지되는 공유 게임 상태만으로 계산하는 `HasAnyUsableSkillForActingTeam()`으로 교체했다.
+- **배운 점**: 네트워크 동기화가 필요한 판정에는 화면 표시 상태를 쓰면 안 된다.
+
+### 2. 증강 등급이 매 판 똑같이 나오고, 리롤하면 등급이 바뀌는 문제
+- **증상**: 새 게임마다 첫 증강 선택에서 항상 같은 등급이 나왔고, 나중에 추가한 리롤 버튼을 누르면 높은 등급이 가장 낮은 등급으로 바뀌었다.
+- **원인**: 두 클라이언트가 같은 등급을 보게 하려고 턴 수를 시드로 쓰는 결정론적 난수를 썼는데, 첫 체크포인트는 항상 10턴이라 시드가 고정되어 있었다. 리롤은 그 뒤에 같은 계산을 다시 호출했고, 그 사이 턴 수가 1 늘어나 있었다.
+- **해결**: 호스트가 매치마다 뽑아 RPC로 전달하는 매치 시드를 추가해 시드에 섞고, 체크포인트가 열린 시점의 턴 수를 한 번만 저장해 리롤에서도 그 값을 쓰게 했다.
+- **배운 점**: "양쪽이 같아야 한다"와 "매번 달라야 한다"는 서로 다른 요구라서 매치 단위 시드가 따로 필요하고, 같은 시점의 계산은 외부 상태가 바뀌기 전에 값을 고정해야 한다.
+
+### 3. 지휘 대상이 캡처당하면 그 팀이 지휘를 영구히 못 쓰는 문제
+- **증상**: 킹이 지휘 대상을 예약한 뒤 그 기물이 활성화되기 전에 잡히면, 쿨타임이 끝나도 새 대상을 지정할 수 없었다.
+- **원인**: 예약 정보가 "대상이 살아 있을 때만" 지워지는 코드 안에 있어서, 대상이 사라지면 죽은 예약이 남았고 중복 지정 방지 검사가 이를 계속 막았다. 다른 상태는 매 턴 죽은 항목을 솎아내는데 이 상태만 그런 정리가 없었다.
+- **해결**: 캡처가 확정되는 지점에서 피해 기물과 연결된 모든 상태를 정리하는 `ClearPieceState`를 호출하도록 했다. 일반 캡처, 앙파상, 스킬 캡처가 모두 이 경로를 지난다. 승급으로 기물이 교체될 때도 같은 함수로 정리하고 쿨타임만 새 기물에 옮긴다.
+- **배운 점**: 기물이 사라지는 모든 경로가 한 지점을 거치게 만들어야 상태가 남지 않는다.
 
 ## 빌드 / 실행
 
+- **Photon App ID 설정**: 이 저장소에는 App ID가 들어 있지 않다. [Photon 대시보드](https://dashboard.photonengine.com)에서 Fusion 앱을 만들어 App ID를 받고, Unity에서 `Tools > Fusion > Fusion Hub`(또는 `Tools > Fusion > Realtime Settings`)에 입력하면 `Assets/Photon/Fusion/Resources/PhotonAppSettings.asset`이 생성된다. 이 파일은 `.gitignore`에 들어 있어 커밋되지 않는다.
 - Unity 에디터에서 `Assets/Scenes/StartScene.unity`부터 Play (방 생성 또는 코드 입장)
 - Windows 빌드: `Builds/StandaloneWindows64/TacticalChess.exe` (최신 빌드 기준)
